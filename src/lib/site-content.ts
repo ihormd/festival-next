@@ -78,3 +78,21 @@ export function useSiteSettings(): SiteSettings {
 }
 
 export async function refreshSiteSettings() { cache = null; await load(); }
+
+// Extra keys used on inner pages
+const EXTRA_DEFAULTS: SiteSettings = {
+  about_eyebrow: "Who we are",
+  about_title: "About NUFF",
+  about_subtitle: "The people and story behind the Niagara Ukrainian Family Festival.",
+  about_mission_heading: "Our Mission",
+  about_history_heading: "Our History",
+  entertainment_eyebrow: "Live performances",
+  entertainment_title: "Entertainment",
+  entertainment_subtitle: "Two days of music, dance, and cultural performances at Fireman's Park.",
+  entertainment_schedule_title: "Weekend lineup",
+  entertainment_cta_title: "Are you a performer?",
+  entertainment_cta_body: "Apply to perform on stage at NUFF 2026. We welcome all styles of Ukrainian music and dance.",
+};
+
+// Merge extras into DEFAULTS
+Object.assign(DEFAULTS, EXTRA_DEFAULTS);

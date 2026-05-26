@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, MapPin, Calendar, Music, HandHeart, Store, Award, Users, Mic2, PartyPopper } from "lucide-react";
 import { useSiteSettings } from "@/lib/site-content";
+import { PartnersStrip } from "@/components/festival/PartnersStrip";
 
 export default function Home() {
   const s = useSiteSettings();
@@ -140,6 +141,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <PartnersStrip />
     </>
   );
 }

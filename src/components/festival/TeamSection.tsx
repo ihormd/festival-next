@@ -16,7 +16,7 @@ export function TeamSection() {
     <section className="container-page" style={{ paddingTop: "5rem", paddingBottom: "7rem" }}>
       <div style={{ maxWidth: "42rem" }}>
         <p className="eyebrow">Board of Directors</p>
-        <h2 className="display-lg" style={{ marginTop: "0.5rem" }}>The volunteers behind NUFF.</h2>
+        <h2 className="display-lg" style={{ marginTop: "0.5rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>The volunteers behind NUFF.</h2>
         <p style={{ marginTop: "1rem", color: "var(--muted-foreground)" }}>An all-volunteer board guides the festival's vision, finances, and partnerships.</p>
       </div>
       <div style={{ marginTop: "3rem", display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1.5rem" }}>

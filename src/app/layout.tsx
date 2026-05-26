@@ -3,6 +3,7 @@ import "./globals.css";
 import { AuthProvider } from "@/context/auth";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   title: "NUFF — Niagara Ukrainian Family Festival",
@@ -17,6 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Header />
           <main>{children}</main>
           <Footer />
+          <Toaster richColors position="top-right" />
         </AuthProvider>
       </body>
     </html>

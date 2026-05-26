@@ -71,3 +71,7 @@ button { font-family: inherit; }
 
 /* secondary color for schedule times */
 .mono-time { color: oklch(0.88 0.18 95); font-family: monospace; font-weight: 600; }
+
+/* Stats grid — always horizontal on tablet+ */
+.stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem 1rem; }
+@media (min-width: 540px) { .stats-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 2rem; } }

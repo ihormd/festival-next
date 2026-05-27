@@ -4,12 +4,15 @@ import { useState } from "react";
 import { Menu, X, ChevronDown, ShoppingBag, User } from "lucide-react";
 import { useAuth } from "@/context/auth";
 import { useSiteSettings } from "@/lib/site-content";
+import { usePathname } from "next/navigation";
 
 export function Header() {
   const [open, setOpen] = useState(false);
   const [involvedOpen, setInvolvedOpen] = useState(false);
   const { user, isAdmin, signOut } = useAuth();
   const s = useSiteSettings();
+  const pathname = usePathname();
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
   const mainNav = [
     { href: "/festival", label: s.header_nav_festival },
@@ -35,9 +38,8 @@ export function Header() {
 
         <nav style={{ display: "flex", alignItems: "center", gap: "1.75rem" }} className="hidden-mobile">
           {mainNav.map((n) => (
-            <Link key={n.href} href={n.href} style={{ fontSize: "0.875rem", fontWeight: 500, color: "var(--muted-foreground)", transition: "color 0.2s" }}
-              onMouseEnter={e => (e.target as any).style.color = "var(--foreground)"}
-              onMouseLeave={e => (e.target as any).style.color = "var(--muted-foreground)"}>
+            <Link key={n.href} href={n.href}
+              style={{ fontSize: "0.875rem", fontWeight: isActive(n.href) ? 600 : 500, color: isActive(n.href) ? "var(--primary)" : "var(--muted-foreground)", transition: "color 0.2s", borderBottom: isActive(n.href) ? "2px solid var(--primary)" : "2px solid transparent", paddingBottom: "0.125rem" }}>
               {n.label}
             </Link>
           ))}

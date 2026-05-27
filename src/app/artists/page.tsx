@@ -1,61 +1,103 @@
 "use client";
-import { Mic2, Send } from "lucide-react";
 import { useState } from "react";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Mic2, Users, Calendar } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/auth";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { toast } from "sonner";
+
+const inp: React.CSSProperties = { width: "100%", padding: "0.5rem 0.875rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "var(--input)", fontSize: "0.9rem", fontFamily: "inherit", outline: "none" };
+const sel: React.CSSProperties = { ...inp, cursor: "pointer" };
+
+const PERFORMANCE_TYPES = ["Solo musician","Band / ensemble","Folk dance group","Choir / vocal ensemble","DJ / electronic","Bandura / traditional instrument","Spoken word / poetry","Other"];
 
 export default function ArtistsPage() {
   const { user } = useAuth();
-  const [form, setForm] = useState({ stage_name: "", contact_name: "", email: "", genre: "", description: "", social_links: "" });
-  const [sent, setSent] = useState(false);
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({ stage_name: "", bio: "", performance_type: "", equipment: "", social_links: "", media_link: "", contact_email: user?.email ?? "", contact_phone: "", set_length_minutes: 30, stage_preference: "main" });
 
-  const submit = async () => {
-    if (!form.stage_name || !form.email) return;
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) { toast.info("Please sign in to submit your application."); router.push("/login"); return; }
+    if (!form.performance_type) { toast.error("Please choose a performance type."); return; }
     setLoading(true);
-    await supabase.from("artist_applications").insert({ ...form, user_id: user?.id ?? null, festival_year: 2026, status: "pending" });
-    setSent(true); setLoading(false);
+    const portfolio_links = [form.media_link, ...form.social_links.split("\n")].map(s => s.trim()).filter(Boolean);
+    const { error } = await supabase.from("artist_applications").insert({
+      stage_name: form.stage_name,
+      bio: `${form.bio}\n\n— Performance type: ${form.performance_type}\n— Equipment required: ${form.equipment}`,
+      portfolio_links, contact_email: form.contact_email, contact_phone: form.contact_phone,
+      set_length_minutes: form.set_length_minutes, stage_preference: form.stage_preference, user_id: user.id,
+    });
+    setLoading(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Submitted! Our booking team will review and reply.");
+    router.push("/dashboard");
   };
 
   return (
-    <div>
-      <section style={{ background: "var(--primary)", color: "white", paddingTop: "4rem", paddingBottom: "4rem" }}>
-        <div className="container-page">
-          <p className="eyebrow" style={{ color: "rgba(255,255,255,0.7)" }}>Perform at NUFF</p>
-          <h1 className="display-lg" style={{ color: "white", marginTop: "0.5rem" }}>Artist Applications</h1>
-          <p style={{ marginTop: "1rem", color: "rgba(255,255,255,0.85)", maxWidth: "36rem", fontSize: "1rem" }}>Share your talent with thousands at NUFF 2026.</p>
+    <>
+      <PageHeader eyebrow="Perform at NUFF" title="Take the NUFF stage" subtitle="One main stage, two days, a packed crowd of families and culture lovers. We program traditional Ukrainian acts alongside contemporary voices." />
+
+      <section className="container-page" style={{ paddingTop: "3rem", paddingBottom: "2rem" }}>
+        <style>{`@media (min-width: 1024px) { .artist-cards { grid-template-columns: repeat(3,1fr) !important; } }`}</style>
+        <div className="artist-cards" style={{ display: "grid", gap: "1.5rem" }}>
+          {[
+            { icon: Mic2, title: "Main stage", body: "Our single main stage — full PA, monitors, backline, lighting rig. Headliner, feature, and emerging slots throughout the weekend." },
+            { icon: Calendar, title: "July 11–12, 2026", body: "Two-day festival at Fireman's Park, Niagara Falls. Set lengths from 20 to 60 minutes." },
+            { icon: Users, title: "What you get", body: "Hospitality, parking, vendor passes for your crew, and a connected Niagara audience." },
+          ].map(s => (
+            <div key={s.title} style={{ borderRadius: "1rem", border: "1px solid var(--border)", background: "var(--card)", padding: "1.5rem" }}>
+              <s.icon size={24} style={{ color: "var(--primary)", marginBottom: "0.75rem" }} />
+              <h3 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "1.25rem", fontWeight: 600, marginBottom: "0.375rem" }}>{s.title}</h3>
+              <p style={{ fontSize: "0.875rem", color: "var(--muted-foreground)", lineHeight: 1.7 }}>{s.body}</p>
+            </div>
+          ))}
         </div>
       </section>
-      <section className="container-page" style={{ paddingTop: "4rem", paddingBottom: "4rem" }}>
-        <div style={{ maxWidth: "560px" }}>
-          <h2 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "1.5rem", fontWeight: 700, marginBottom: "1.5rem" }}>Apply to perform</h2>
-          {sent ? (
-            <div style={{ padding: "2rem", borderRadius: "1rem", background: "var(--cream)", border: "1px solid var(--border)", textAlign: "center" }}>
-              <Mic2 size={32} style={{ color: "var(--primary)", margin: "0 auto 0.5rem" }} />
-              <h3 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700 }}>Application received!</h3>
-              <p style={{ color: "var(--muted-foreground)", marginTop: "0.5rem", fontSize: "0.875rem" }}>We'll review your application and contact you soon.</p>
+
+      <section className="container-page" style={{ paddingBottom: "4rem", maxWidth: "768px" }}>
+        <h2 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "1.5rem", fontWeight: 600, marginBottom: "1.5rem" }}>Artist application</h2>
+        <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: "1.5rem", borderRadius: "1rem", border: "1px solid var(--border)", background: "var(--card)", padding: "1.5rem 2rem", boxShadow: "var(--shadow-soft)" }}>
+          <style>{`@media (min-width: 640px) { .artist-2col { grid-template-columns: 1fr 1fr !important; } }`}</style>
+          <div className="artist-2col" style={{ display: "grid", gap: "1rem" }}>
+            <div><label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.375rem" }}>Stage / artist name</label><input required value={form.stage_name} onChange={e => setForm({ ...form, stage_name: e.target.value })} style={inp} /></div>
+            <div>
+              <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.375rem" }}>Performance type</label>
+              <select value={form.performance_type} onChange={e => setForm({ ...form, performance_type: e.target.value })} style={sel}>
+                <option value="">Choose one…</option>
+                {PERFORMANCE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
             </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              {[{ key: "stage_name", label: "Stage / act name *" }, { key: "contact_name", label: "Contact name *" }, { key: "email", label: "Email *" }, { key: "genre", label: "Genre / style" }, { key: "social_links", label: "Social media / website" }].map(f => (
-                <div key={f.key}>
-                  <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.375rem" }}>{f.label}</label>
-                  <input value={(form as any)[f.key]} onChange={e => setForm({ ...form, [f.key]: e.target.value })}
-                    style={{ width: "100%", padding: "0.625rem 0.875rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "var(--card)", fontSize: "0.9rem", fontFamily: "inherit", outline: "none" }} />
-                </div>
-              ))}
-              <div>
-                <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.375rem" }}>About your act</label>
-                <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={4}
-                  style={{ width: "100%", padding: "0.625rem 0.875rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "var(--card)", fontSize: "0.9rem", fontFamily: "inherit", resize: "vertical", outline: "none" }} />
-              </div>
-              <button onClick={submit} disabled={loading} style={{ padding: "0.75rem 1.75rem", borderRadius: "9999px", background: "var(--primary)", color: "white", border: "none", cursor: "pointer", fontSize: "1rem", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "0.5rem", fontFamily: "Montserrat, sans-serif", opacity: loading ? 0.7 : 1 }}>
-                <Send size={16} /> {loading ? "Submitting…" : "Submit application"}
-              </button>
+          </div>
+          <div><label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.375rem" }}>Short bio</label><textarea rows={4} value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} style={{ ...inp, resize: "vertical" }} /></div>
+          <div><label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.375rem" }}>Equipment required</label><textarea rows={3} placeholder="What you bring vs. what you need from us (mics, DI, monitors, backline, lighting…)" value={form.equipment} onChange={e => setForm({ ...form, equipment: e.target.value })} style={{ ...inp, resize: "vertical" }} /></div>
+          <div><label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.375rem" }}>Audio / video link</label><input placeholder="https://youtube.com/… or https://soundcloud.com/…" value={form.media_link} onChange={e => setForm({ ...form, media_link: e.target.value })} style={inp} /></div>
+          <div><label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.375rem" }}>Social media links (one per line)</label><textarea rows={3} placeholder={"https://instagram.com/…\nhttps://tiktok.com/…\nhttps://spotify.com/…"} value={form.social_links} onChange={e => setForm({ ...form, social_links: e.target.value })} style={{ ...inp, resize: "vertical" }} /></div>
+          <div className="artist-2col" style={{ display: "grid", gap: "1rem" }}>
+            <div>
+              <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.375rem" }}>Preferred day</label>
+              <select value={form.stage_preference} onChange={e => setForm({ ...form, stage_preference: e.target.value })} style={sel}>
+                <option value="sat-jul-11">Saturday · July 11</option>
+                <option value="sun-jul-12">Sunday · July 12</option>
+                <option value="either">Either day</option>
+              </select>
             </div>
-          )}
-        </div>
+            <div><label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.375rem" }}>Set length (min)</label><input type="number" min={10} max={120} value={form.set_length_minutes} onChange={e => setForm({ ...form, set_length_minutes: parseInt(e.target.value) || 30 })} style={inp} /></div>
+          </div>
+          <div className="artist-2col" style={{ display: "grid", gap: "1rem" }}>
+            <div><label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.375rem" }}>Contact email</label><input type="email" required value={form.contact_email} onChange={e => setForm({ ...form, contact_email: e.target.value })} style={inp} /></div>
+            <div><label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.375rem" }}>Contact phone</label><input value={form.contact_phone} onChange={e => setForm({ ...form, contact_phone: e.target.value })} style={inp} /></div>
+          </div>
+          {!user && <p style={{ fontSize: "0.875rem", color: "var(--muted-foreground)" }}>You'll need to <Link href="/login" style={{ color: "var(--primary)", textDecoration: "underline" }}>sign in</Link> or <Link href="/signup" style={{ color: "var(--primary)", textDecoration: "underline" }}>create an account</Link> to submit.</p>}
+          <button type="submit" disabled={loading} style={{ width: "100%", padding: "0.875rem", borderRadius: "0.5rem", background: "var(--primary)", color: "white", border: "none", cursor: "pointer", fontSize: "1rem", fontWeight: 700, fontFamily: "Montserrat, sans-serif", opacity: loading ? 0.7 : 1 }}>
+            {loading ? "Submitting…" : "Submit application"}
+          </button>
+        </form>
       </section>
-    </div>
+    </>
   );
 }
+import React from "react";

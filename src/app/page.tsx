@@ -30,10 +30,10 @@ export default function Home() {
   ];
 
   const pillars = [
-    { img: "/assets/food-vendors.jpg", title: s.home_pillar_food_title || "Food", body: s.home_pillar_food_body || "Authentic Ukrainian cuisine and drinks." },
-    { img: "/assets/stage-performance.jpg", title: s.home_pillar_music_title || "Music", body: s.home_pillar_music_body || "Live performances all weekend." },
-    { img: "/assets/culture-pysanky.jpg", title: s.home_pillar_culture_title || "Culture", body: s.home_pillar_culture_body || "Art, crafts, and traditions." },
-    { img: "/assets/memory-2.jpg", title: s.home_pillar_family_title || "Family", body: s.home_pillar_family_body || "Activities for all ages." },
+    { img: s.pillar_food_image_url || "/assets/food-vendors.jpg", title: s.home_pillar_food_title || "Food", body: s.home_pillar_food_body || "Authentic Ukrainian cuisine and drinks." },
+    { img: s.pillar_music_image_url || "/assets/stage-performance.jpg", title: s.home_pillar_music_title || "Music", body: s.home_pillar_music_body || "Live performances all weekend." },
+    { img: s.pillar_culture_image_url || "/assets/culture-pysanky.jpg", title: s.home_pillar_culture_title || "Culture", body: s.home_pillar_culture_body || "Art, crafts, and traditions." },
+    { img: s.pillar_family_image_url || "/assets/memory-2.jpg", title: s.home_pillar_family_title || "Family", body: s.home_pillar_family_body || "Activities for all ages." },
   ];
 
   const involved = [
@@ -55,7 +55,7 @@ export default function Home() {
       {/* Hero */}
       <section style={{ position: "relative", overflow: "hidden", minHeight: "calc(100vh - 80px)" }}>
         <div style={{ position: "absolute", inset: 0 }}>
-          <img src="/assets/hero-festival.jpg" alt="NUFF Festival" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img src={s.hero_image_url || "/assets/hero-festival.jpg"} alt="NUFF Festival" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,0.52) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.62) 100%)" }} />
         </div>
         <div className="container-page" style={{ position: "relative", paddingTop: "8rem", paddingBottom: "8rem", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", color: "white" }}>

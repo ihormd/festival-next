@@ -6,13 +6,25 @@ import { supabase } from "@/lib/supabase";
 import { useSiteSettings } from "@/lib/site-content";
 
 type ScheduleRow = { id: string; day: "saturday" | "sunday"; start_time: string; end_time: string | null; title: string; area: string | null };
-const memories = ["/assets/memory-1.jpg","/assets/memory-2.jpg","/assets/memory-3.jpg","/assets/memory-4.jpg","/assets/memory-5.jpg","/assets/memory-6.jpg"];
+const DEFAULT_MEMORIES = ["/assets/memory-1.jpg","/assets/memory-2.jpg","/assets/memory-3.jpg","/assets/memory-4.jpg","/assets/memory-5.jpg","/assets/memory-6.jpg"];
 
 export default function FestivalPage() {
   const s = useSiteSettings();
   const [schedule, setSchedule] = useState<ScheduleRow[]>([]);
+  const [memories, setMemories] = useState<string[]>(DEFAULT_MEMORIES);
+
   useEffect(() => {
-    supabase.from("festival_schedule").select("id,day,start_time,end_time,title,area").eq("active", true).order("day").order("sort_order").then(({ data }) => setSchedule((data as ScheduleRow[]) ?? []));
+    supabase.from("festival_schedule").select("id,day,start_time,end_time,title,area").order("day").order("sort_order").then(({ data }) => setSchedule((data as ScheduleRow[]) ?? []));
+    // Load memories from storage bucket
+    supabase.storage.from("festival-memories").list("", { limit: 50, sortBy: { column: "created_at", order: "desc" } }).then(({ data }) => {
+      if (data && data.length > 0) {
+        const urls = data.filter(f => f.name !== ".emptyFolderPlaceholder").map(f => {
+          const { data: u } = supabase.storage.from("festival-memories").getPublicUrl(f.name);
+          return u.publicUrl;
+        });
+        if (urls.length > 0) setMemories(urls);
+      }
+    });
   }, []);
 
   const visitCards = [

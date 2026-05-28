@@ -3,9 +3,10 @@ import { useAuth } from "@/context/auth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { refreshSiteSettings, DEFAULTS } from "@/lib/site-content";
-import { Save, Users, Store, Mic2, HandHeart, MessageSquare, Settings, Layout, AlignLeft, ShoppingBag, UserCircle, Globe, Star } from "lucide-react";
+import { Save, Users, Store, Mic2, HandHeart, MessageSquare, Settings, Layout, AlignLeft, ShoppingBag, UserCircle, Globe, Star, ImageIcon } from "lucide-react";
+import { MediaManager } from "./MediaManager";
 
-type Tab = "settings" | "header" | "footer" | "about" | "entertainment" | "home_extra" | "vendors_tab" | "artists_tab" | "volunteers_tab" | "messages" | "merch" | "team" | "sponsors_list";
+type Tab = "settings" | "header" | "footer" | "about" | "entertainment" | "home_extra" | "vendors_tab" | "artists_tab" | "volunteers_tab" | "messages" | "merch" | "team" | "sponsors_list" | "media";
 
 const inp: React.CSSProperties = { width: "100%", padding: "0.5rem 0.875rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "var(--input)", fontSize: "0.875rem", fontFamily: "inherit", outline: "none" };
 
@@ -29,6 +30,11 @@ const FIELDS: Record<Tab, { key: string; label: string; multiline?: boolean }[]>
     { key: "seo_title", label: "SEO title" },
     { key: "seo_description", label: "SEO description", multiline: true },
     { key: "google_maps_embed", label: "Google Maps embed URL" },
+    { key: "hero_image_url", label: "🖼 Hero background image URL" },
+    { key: "pillar_food_image_url", label: "🖼 Pillar: Food image URL" },
+    { key: "pillar_music_image_url", label: "🖼 Pillar: Music image URL" },
+    { key: "pillar_culture_image_url", label: "🖼 Pillar: Culture image URL" },
+    { key: "pillar_family_image_url", label: "🖼 Pillar: Family image URL" },
   ],
   header: [
     { key: "header_nav_festival", label: "Nav: Festival" },
@@ -96,7 +102,7 @@ const FIELDS: Record<Tab, { key: string; label: string; multiline?: boolean }[]>
     { key: "home_stat_3_value", label: "Stat 3 value" }, { key: "home_stat_3_label", label: "Stat 3 label" },
     { key: "home_stat_4_value", label: "Stat 4 value" }, { key: "home_stat_4_label", label: "Stat 4 label" },
   ],
-  vendors_tab: [], artists_tab: [], volunteers_tab: [], messages: [], merch: [], team: [], sponsors_list: [],
+  vendors_tab: [], artists_tab: [], volunteers_tab: [], messages: [], merch: [], team: [], sponsors_list: [], media: [],
 };
 
 function SettingsEditor({ tab }: { tab: Tab }) {
@@ -481,6 +487,7 @@ export default function AdminPage() {
     { id: "team", label: "Board", icon: UserCircle, group: "People" },
     { id: "sponsors_list", label: "Sponsors", icon: Star, group: "People" },
     { id: "merch", label: "Merch", icon: ShoppingBag, group: "Store" },
+    { id: "media", label: "Photos & Media", icon: ImageIcon, group: "Store" },
     { id: "vendors_tab", label: "Vendors", icon: Store, group: "Applications" },
     { id: "artists_tab", label: "Artists", icon: Mic2, group: "Applications" },
     { id: "volunteers_tab", label: "Volunteers", icon: HandHeart, group: "Applications" },
@@ -514,6 +521,7 @@ export default function AdminPage() {
         <main style={{ flex: 1, minWidth: 0 }}>
           {(tab === "settings" || tab === "header" || tab === "footer" || tab === "about" || tab === "entertainment" || tab === "home_extra") && <SettingsEditor tab={tab} />}
           {tab === "merch" && <MerchManager />}
+          {tab === "media" && <MediaManager />}
           {tab === "team" && <TeamManager />}
           {tab === "sponsors_list" && <SponsorsManager />}
           {tab === "vendors_tab" && <><h2 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "1.25rem", marginBottom: "0.5rem" }}>Vendor Applications</h2><AppList table="vendor_applications" titleField="business_name" /></>}

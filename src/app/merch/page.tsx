@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ShoppingBag, Plus, Minus, Trash2, X } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import { cart, useCart } from "@/lib/cart-store";
+import { dbQuery } from "@/lib/db";
 
 type Product = { id: string; name: string; description: string | null; price_cents: number; image_url: string | null; stock: number; };
 
@@ -15,7 +15,7 @@ export default function MerchPage() {
   const cartTotal = items.reduce((s, i) => s + i.qty * i.price_cents, 0);
 
   useEffect(() => {
-    supabase.from("merch_products").select("*").eq("active", true).order("created_at").then(({ data }) => setProducts(data ?? []));
+    dbQuery<Product>({ table: "merch_products", filters: { active: true } }).then(setProducts);
   }, []);
 
   return (
@@ -24,9 +24,9 @@ export default function MerchPage() {
 
       <section className="container-page" style={{ paddingTop: "3rem", paddingBottom: "4rem" }}>
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1.5rem" }}>
-          <button onClick={() => setCartOpen(true)} style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.5rem 1.25rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "var(--card)", cursor: "pointer", fontSize: "0.875rem", fontFamily: "inherit", fontWeight: 500, position: "relative" }}>
+          <button onClick={() => setCartOpen(true)} style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.5rem 1.25rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "var(--card)", cursor: "pointer", fontSize: "0.875rem", fontFamily: "inherit", fontWeight: 500 }}>
             <ShoppingBag size={16} /> Cart
-            {cartCount > 0 && <span style={{ marginLeft: "0.25rem", display: "inline-flex", width: 20, height: 20, alignItems: "center", justifyContent: "center", borderRadius: "50%", background: "var(--primary)", color: "white", fontSize: "0.7rem", fontWeight: 700 }}>{cartCount}</span>}
+            {cartCount > 0 && <span style={{ display: "inline-flex", width: 20, height: 20, alignItems: "center", justifyContent: "center", borderRadius: "50%", background: "var(--primary)", color: "white", fontSize: "0.7rem", fontWeight: 700 }}>{cartCount}</span>}
           </button>
         </div>
 
@@ -39,7 +39,7 @@ export default function MerchPage() {
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "1.5rem" }}>
             {products.map(p => (
-              <article key={p.id} style={{ borderRadius: "0.875rem", border: "1px solid var(--border)", overflow: "hidden", background: "var(--card)" }}
+              <article key={p.id} style={{ borderRadius: "0.875rem", border: "1px solid var(--border)", overflow: "hidden", background: "var(--card)", transition: "box-shadow 0.2s" }}
                 onMouseEnter={e => (e.currentTarget as any).style.boxShadow = "0 8px 30px -8px rgba(0,87,183,0.15)"}
                 onMouseLeave={e => (e.currentTarget as any).style.boxShadow = "none"}>
                 <div style={{ aspectRatio: "1/1", background: "var(--muted)", overflow: "hidden" }}>
@@ -47,8 +47,7 @@ export default function MerchPage() {
                     ? <img src={p.image_url} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.4s" }}
                         onMouseEnter={e => (e.currentTarget as any).style.transform = "scale(1.05)"}
                         onMouseLeave={e => (e.currentTarget as any).style.transform = "scale(1)"} />
-                    : <div style={{ height: "100%", display: "grid", placeItems: "center", color: "var(--muted-foreground)", fontSize: "0.875rem" }}>No image</div>
-                  }
+                    : <div style={{ height: "100%", display: "grid", placeItems: "center", color: "var(--muted-foreground)", fontSize: "0.875rem" }}>No image</div>}
                 </div>
                 <div style={{ padding: "1rem" }}>
                   <h3 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 600, fontSize: "1rem" }}>{p.name}</h3>
@@ -67,7 +66,6 @@ export default function MerchPage() {
         )}
       </section>
 
-      {/* Cart drawer */}
       {cartOpen && (
         <div style={{ position: "fixed", inset: 0, zIndex: 50 }}>
           <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)" }} onClick={() => setCartOpen(false)} />

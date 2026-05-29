@@ -1,14 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { dbQuery } from "@/lib/db";
 
 type Sponsor = { id: string; name: string; logo_url: string | null; website_url: string | null; level: string; sort_order: number; };
 
 export function PartnersStrip() {
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   useEffect(() => {
-    supabase.from("sponsors").select("*").eq("active", true).order("sort_order").then(({ data }) => setSponsors(data ?? []));
+    dbQuery<Sponsor>({ table: "sponsors", filters: { active: true }, order: { col: "sort_order" } })
+      .then(setSponsors);
   }, []);
 
   const loop = sponsors.length > 0 ? [...sponsors, ...sponsors] : [];

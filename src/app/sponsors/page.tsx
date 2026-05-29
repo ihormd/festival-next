@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Check } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import { dbQuery } from "@/lib/db";
 
 type Tier = { tier: "bronze"|"silver"|"gold"|"platinum"; name: string; price: number; perks: string[]; featured?: boolean };
 const tiers: Tier[] = [
@@ -18,7 +19,7 @@ type Sponsor = { id: string; name: string; logo_url: string | null; website_url:
 export default function SponsorsPage() {
   const [list, setList] = useState<Sponsor[]>([]);
   useEffect(() => {
-    supabase.from("sponsors").select("*").eq("active", true).order("sort_order").then(({ data }) => setList((data as Sponsor[]) ?? []));
+    dbQuery<Sponsor>({ table: "sponsors", filters: { active: true }, order: { col: "sort_order" } }).then(setList);
   }, []);
 
   const groups: Record<Sponsor["level"], Sponsor[]> = { platinum: [], gold: [], silver: [], bronze: [] };

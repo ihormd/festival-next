@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { dbQuery } from "@/lib/db";
 
 type Member = { id: string; name: string; role: string; bio: string | null; image_url: string | null; sort_order: number; };
 
@@ -9,7 +9,8 @@ function initials(name: string) { return name.split(" ").map(s => s[0]).slice(0,
 export function TeamSection() {
   const [members, setMembers] = useState<Member[]>([]);
   useEffect(() => {
-    supabase.from("team_members").select("*").eq("active", true).order("sort_order").then(({ data }) => setMembers(data ?? []));
+    dbQuery<Member>({ table: "team_members", filters: { active: true }, order: { col: "sort_order" } })
+      .then(setMembers);
   }, []);
 
   return (
@@ -26,7 +27,7 @@ export function TeamSection() {
             {m.image_url ? (
               <img src={m.image_url} alt={m.name} style={{ width: 80, height: 80, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
             ) : (
-              <div style={{ width: 80, height: 80, borderRadius: "50%", flexShrink: 0, display: "grid", placeItems: "center", fontFamily: "Montserrat, sans-serif", fontSize: "1.25rem", fontWeight: 600, background: "linear-gradient(135deg, var(--primary), var(--sky))", color: "white" }}>
+              <div style={{ width: 80, height: 80, borderRadius: "50%", flexShrink: 0, display: "grid", placeItems: "center", fontFamily: "Montserrat, sans-serif", fontSize: "1.25rem", fontWeight: 600, background: "linear-gradient(135deg, var(--primary), oklch(0.55 0.18 252))", color: "white" }}>
                 {initials(m.name)}
               </div>
             )}

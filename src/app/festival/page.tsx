@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Calendar, MapPin, Clock, Car, Accessibility, ShieldCheck, Heart, Music, Users } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useSiteSettings } from "@/lib/site-content";
+import { dbQuery } from "@/lib/db";
 
 type ScheduleRow = { id: string; day: "saturday" | "sunday"; start_time: string; end_time: string | null; title: string; area: string | null };
 const DEFAULT_MEMORIES = ["/assets/memory-1.jpg","/assets/memory-2.jpg","/assets/memory-3.jpg","/assets/memory-4.jpg","/assets/memory-5.jpg","/assets/memory-6.jpg"];
@@ -14,7 +15,7 @@ export default function FestivalPage() {
   const [memories, setMemories] = useState<string[]>(DEFAULT_MEMORIES);
 
   useEffect(() => {
-    supabase.from("festival_schedule").select("id,day,start_time,end_time,title,area").order("day").order("sort_order").then(({ data }) => setSchedule((data as ScheduleRow[]) ?? []));
+    dbQuery<ScheduleRow>({ table: "festival_schedule", order: { col: "day" } }).then(setSchedule);
     // Load memories from storage bucket
     supabase.storage.from("festival-memories").list("", { limit: 50, sortBy: { column: "created_at", order: "desc" } }).then(({ data }) => {
       if (data && data.length > 0) {

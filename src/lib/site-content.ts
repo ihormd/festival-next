@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from "react";
-import { supabase } from "./supabase";
 
 export type SiteSettings = Record<string, string>;
 
@@ -14,6 +13,7 @@ export const DEFAULTS: SiteSettings = {
   hero_tagline: "A celebration of Ukrainian heritage in the heart of Niagara.",
   hero_subtitle: "Two days of music, dance, food, craft, and community at Fireman's Park.",
   contact_email: "info@niagarka.ca",
+  contact_phone: "",
   home_stat_1_value: "2", home_stat_1_label: "Days of celebration",
   home_stat_2_value: "10+", home_stat_2_label: "Performers & artists",
   home_stat_3_value: "30+", home_stat_3_label: "Vendors & artisans",
@@ -47,10 +47,45 @@ export const DEFAULTS: SiteSettings = {
   footer_col1_title: "Festival", footer_col2_title: "Get involved",
   footer_copyright: "Niagara Ukrainian Family Festival. All rights reserved.",
   footer_contact_display: "info@niagarka.ca · Niagara Falls, Ontario 🇨🇦 🇺🇦",
+  about_eyebrow: "Who we are", about_title: "About NUFF",
+  about_subtitle: "The people and story behind the Niagara Ukrainian Family Festival.",
+  about_mission_heading: "Our Mission",
+  about_history_heading: "Our History",
   about_mission: "NUFF celebrates Ukrainian heritage and brings the Niagara community together through music, food, and culture.",
   about_history: "Founded by the Ukrainian community of Niagara, NUFF has grown into one of the region's most beloved summer festivals.",
+  entertainment_eyebrow: "Live performances", entertainment_title: "Entertainment",
+  entertainment_subtitle: "Two days of music, dance, and cultural performances at Fireman's Park.",
+  entertainment_schedule_title: "Weekend lineup",
+  entertainment_cta_title: "Are you a performer?",
+  entertainment_cta_body: "Apply to perform on stage at NUFF 2026.",
   seo_title: "NUFF — Niagara Ukrainian Family Festival",
   seo_description: "A celebration of Ukrainian heritage in the heart of Niagara. July 11–12, 2026.",
+  hero_image_url: "/assets/hero-festival.jpg",
+  pillar_food_image_url: "/assets/food-vendors.jpg",
+  pillar_music_image_url: "/assets/stage-performance.jpg",
+  pillar_culture_image_url: "/assets/culture-pysanky.jpg",
+  pillar_family_image_url: "/assets/memory-2.jpg",
+  festival_page_eyebrow: "NUFF 2026", festival_page_title: "The Festival",
+  festival_page_subtitle: "Two days of music, dance, food, craft, and community at Fireman's Park.",
+  festival_mission_title: "Our Mission", festival_history_title: "Our History",
+  festival_mission_body: "NUFF celebrates Ukrainian heritage and brings the Niagara community together.",
+  festival_history_body: "Founded by the Ukrainian community of Niagara, NUFF has grown into one of the region's most beloved summer festivals.",
+  festival_community_eyebrow: "Community first",
+  festival_community_title: "Built by volunteers, for everyone.",
+  festival_community_body1: "NUFF is an all-volunteer effort rooted in the Ukrainian diaspora of Niagara Falls.",
+  festival_community_body2: "Every ticket sold, every vendor booth booked, and every volunteer hour goes directly toward making NUFF the best it can be.",
+  festival_experience_title: "What to expect",
+  festival_experience_items: "Live music on two stages\nAuthentic Ukrainian food vendors\nTraditional dance ensembles\nPysanky & craft workshops\nKids' Zone activities\nArtisan marketplace",
+  festival_visit_eyebrow: "Plan your visit", festival_visit_heading: "Everything you need to know.",
+  festival_visit_dates_title: "Dates", festival_visit_dates_body: "July 11–12, 2026",
+  festival_visit_location_title: "Location", festival_visit_location_body: "Fireman's Park, 2275 Dorchester Road, Niagara Falls, ON",
+  festival_visit_hours_title: "Hours", festival_visit_hours_body: "11:00 AM – 10:00 PM both days",
+  festival_visit_parking_title: "Parking", festival_visit_parking_body: "Free parking on site.",
+  festival_visit_accessibility_title: "Accessibility", festival_visit_accessibility_body: "The grounds are fully accessible.",
+  festival_visit_safety_title: "Safety", festival_visit_safety_body: "Licensed event with on-site first aid and security.",
+  festival_memories_eyebrow: "Past festivals", festival_memories_title: "Moments that last.",
+  festival_memories_body: "A glimpse of the joy, culture, and community from previous NUFF festivals.",
+  google_maps_embed: "",
 };
 
 let cache: SiteSettings | null = null;
@@ -58,12 +93,20 @@ const listeners = new Set<() => void>();
 
 async function load() {
   try {
-    const { data } = await supabase.from("site_settings").select("key,value");
+    const res = await fetch("/api/db", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ table: "site_settings", select: "key,value" }),
+      cache: "no-store",
+    });
+    const json = await res.json();
     const map: SiteSettings = { ...DEFAULTS };
-    (data ?? []).forEach((r: any) => { map[r.key] = r.value; });
+    (json.data ?? []).forEach((r: any) => { map[r.key] = r.value; });
     cache = map;
-    listeners.forEach((l) => l());
-  } catch { cache = { ...DEFAULTS }; listeners.forEach((l) => l()); }
+  } catch {
+    cache = { ...DEFAULTS };
+  }
+  listeners.forEach(l => l());
 }
 
 export function useSiteSettings(): SiteSettings {
@@ -78,21 +121,3 @@ export function useSiteSettings(): SiteSettings {
 }
 
 export async function refreshSiteSettings() { cache = null; await load(); }
-
-// Extra keys used on inner pages
-const EXTRA_DEFAULTS: SiteSettings = {
-  about_eyebrow: "Who we are",
-  about_title: "About NUFF",
-  about_subtitle: "The people and story behind the Niagara Ukrainian Family Festival.",
-  about_mission_heading: "Our Mission",
-  about_history_heading: "Our History",
-  entertainment_eyebrow: "Live performances",
-  entertainment_title: "Entertainment",
-  entertainment_subtitle: "Two days of music, dance, and cultural performances at Fireman's Park.",
-  entertainment_schedule_title: "Weekend lineup",
-  entertainment_cta_title: "Are you a performer?",
-  entertainment_cta_body: "Apply to perform on stage at NUFF 2026. We welcome all styles of Ukrainian music and dance.",
-};
-
-// Merge extras into DEFAULTS
-Object.assign(DEFAULTS, EXTRA_DEFAULTS);

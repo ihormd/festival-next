@@ -33,7 +33,7 @@ export function Header() {
     <header style={{ position: "sticky", top: 0, zIndex: 40, borderBottom: "1px solid var(--border)", background: "var(--background)", backdropFilter: "blur(12px)" }}>
       <div className="container-page" style={{ display: "flex", height: 80, alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
         <Link href="/" style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
-          <img src="/assets/nuff-logo.png" alt={s.header_logo_alt} style={{ height: 56, width: "auto" }} />
+          <img src={s.logo_url || "/assets/nuff-logo.png"} alt={s.header_logo_alt} style={{ height: 56, width: "auto" }} />
         </Link>
 
         <nav style={{ display: "flex", alignItems: "center", gap: "1.75rem" }} className="hidden-mobile">

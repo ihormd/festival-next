@@ -5,6 +5,7 @@ import { useAuth } from "@/context/auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CreditCard, Mail, Copy, Check } from "lucide-react";
+import { useSiteSettings } from "@/lib/site-content";
 
 type Spot = { id: string; code: string; label: string | null; status: "available" | "pending" | "occupied"; x: number; y: number; w: number; h: number; price_cents: number; };
 type BookingResult = { id: string; order_number: string; amount_cents: number; payment_method: "stripe" | "etransfer"; pending_until: string | null; };
@@ -15,6 +16,7 @@ const dotFill = (s: Spot["status"]) => s === "available" ? "#10b981" : s === "pe
 
 export default function VendorsPage() {
   const { user } = useAuth();
+  const s = useSiteSettings();
   const [spots, setSpots] = useState<Spot[]>([]);
   const [selected, setSelected] = useState<Spot | null>(null);
   const [highlight, setHighlight] = useState<string | null>(null);
@@ -102,7 +104,7 @@ export default function VendorsPage() {
             {/* Map */}
             <div style={{ position: "relative", width: "100%", overflow: "hidden", borderRadius: "1rem", border: "1px solid var(--border)", background: "rgba(0,0,0,0.05)" }}>
               <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} style={{ display: "block", width: "100%", height: "auto" }}>
-                <image href="/assets/festival-map.jpg" x={0} y={0} width={VIEW_W} height={VIEW_H} preserveAspectRatio="xMidYMid slice" />
+                <image href={s.vendor_map_image_url || "/assets/festival-map.jpg"} x={0} y={0} width={VIEW_W} height={VIEW_H} preserveAspectRatio="xMidYMid slice" />
                 {spots.map(s => {
                   const cx = s.x + s.w / 2; const cy = s.y + s.h / 2; const r = 18;
                   const fill = dotFill(s.status); const clickable = s.status === "available";

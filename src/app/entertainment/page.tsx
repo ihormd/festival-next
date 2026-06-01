@@ -21,7 +21,7 @@ export default function EntertainmentPage() {
         <style>{`@media (min-width: 1024px) { .ent-grid { grid-template-columns: 1fr 1fr !important; } }`}</style>
         <div className="ent-grid" style={{ display: "grid", gap: "2.5rem", alignItems: "start" }}>
           <div style={{ borderRadius: "0.875rem", overflow: "hidden", border: "1px solid var(--border)" }}>
-            <img src="/assets/stage-performance.jpg" alt="Stage performance" style={{ width: "100%", height: 320, objectFit: "cover" }} />
+            <img src={s.entertainment_stage_url || "/assets/stage-performance.jpg"} alt="Stage performance" style={{ width: "100%", height: 320, objectFit: "cover" }} />
           </div>
           <div>
             <h2 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "1.5rem", fontWeight: 600, marginBottom: "1.5rem" }}>{s.entertainment_schedule_title || "Weekend lineup"}</h2>
@@ -48,7 +48,7 @@ export default function EntertainmentPage() {
               <p style={{ color: "var(--muted-foreground)", marginBottom: "1.5rem", lineHeight: 1.7 }}>{s.entertainment_cta_body || "Apply to perform on stage at NUFF 2026. We welcome all styles of Ukrainian music and dance."}</p>
               <Link href="/apply/artist"><button style={{ padding: "0.75rem 2rem", borderRadius: "0.5rem", background: "var(--primary)", color: "white", border: "none", cursor: "pointer", fontSize: "1rem", fontWeight: 600, fontFamily: "Montserrat, sans-serif" }}>Apply to Perform</button></Link>
             </div>
-            <img src="/assets/culture-pysanky.jpg" alt="Pysanky" style={{ borderRadius: "0.875rem", width: "100%", height: 288, objectFit: "cover" }} />
+            <img src={s.entertainment_culture_url || "/assets/culture-pysanky.jpg"} alt="Pysanky" style={{ borderRadius: "0.875rem", width: "100%", height: 288, objectFit: "cover" }} />
           </div>
         </div>
       </section>

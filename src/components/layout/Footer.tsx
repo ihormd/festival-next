@@ -10,7 +10,7 @@ export function Footer() {
       <div className="container-page" style={{ padding: "3.5rem 1.5rem", display: "grid", gap: "2.5rem", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))" }}>
         <div style={{ gridColumn: "span 2" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-            <img src="/assets/nuff-logo.png" alt={s.festival_short_name} style={{ height: 56, width: "auto" }} />
+            <img src={s.logo_url || "/assets/nuff-logo.png"} alt={s.festival_short_name} style={{ height: 56, width: "auto" }} />
             <div>
               <div className="font-display" style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--primary)" }}>{s.festival_short_name}</div>
               <div style={{ fontSize: "0.7rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--muted-foreground)" }}>{s.festival_name}</div>

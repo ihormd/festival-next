@@ -86,6 +86,11 @@ export const DEFAULTS: SiteSettings = {
   festival_memories_eyebrow: "Past festivals", festival_memories_title: "Moments that last.",
   festival_memories_body: "A glimpse of the joy, culture, and community from previous NUFF festivals.",
   google_maps_embed: "",
+  logo_url: "/assets/nuff-logo.png",
+  vendor_map_image_url: "/assets/festival-map.jpg",
+  entertainment_stage_url: "/assets/stage-performance.jpg",
+  entertainment_culture_url: "/assets/culture-pysanky.jpg",
+  about_hero_url: "",
 };
 
 let cache: SiteSettings | null = null;

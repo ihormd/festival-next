@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { refreshSiteSettings, DEFAULTS } from "@/lib/site-content";
 import { Save, Users, Store, Mic2, HandHeart, MessageSquare, Settings, Layout, AlignLeft, ShoppingBag, UserCircle, Globe, Star, ImageIcon } from "lucide-react";
 import { MediaManager } from "./MediaManager";
+import { toast } from "sonner";
 
 type Tab = "settings" | "header" | "footer" | "about" | "entertainment" | "home_extra" | "vendors_tab" | "artists_tab" | "volunteers_tab" | "messages" | "merch" | "team" | "sponsors_list" | "media";
 
@@ -307,82 +308,128 @@ function MerchManager() {
 // ─────────────────────────────────────────
 function TeamManager() {
   const [members, setMembers] = useState<any[]>([]);
+  const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", role: "", bio: "", sort_order: 0 });
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [adding, setAdding] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
 
   const load = () => supabase.from("team_members").select("*").order("sort_order").then(({ data }) => setMembers(data ?? []));
   useEffect(() => { load(); }, []);
 
-  const add = async () => {
-    setAdding(true);
-    let image_url: string | null = null;
-    if (imageFile) {
-      const path = `team/${Date.now()}-${imageFile.name}`;
-      await supabase.storage.from("team-photos").upload(path, imageFile);
-      const { data } = supabase.storage.from("team-photos").getPublicUrl(path);
-      image_url = data.publicUrl;
+  const startAdd = () => { setEditId(null); setForm({ name: "", role: "", bio: "", sort_order: members.length }); setImageFile(null); setShowForm(true); };
+  const startEdit = (m: any) => { setEditId(m.id); setForm({ name: m.name, role: m.role, bio: m.bio || "", sort_order: m.sort_order || 0 }); setImageFile(null); setShowForm(true); };
+  const cancel = () => { setShowForm(false); setEditId(null); };
+
+  const uploadPhoto = async (): Promise<string | null> => {
+    if (!imageFile) return null;
+    const path = `${Date.now()}-${imageFile.name.replace(/\s+/g, "_")}`;
+    const { error } = await supabase.storage.from("team-photos").upload(path, imageFile, { upsert: true });
+    if (error) { toast.error(error.message); return null; }
+    const { data } = supabase.storage.from("team-photos").getPublicUrl(path);
+    return data.publicUrl;
+  };
+
+  const save = async () => {
+    if (!form.name || !form.role) { toast.error("Name and role are required."); return; }
+    setSaving(true);
+    const image_url = await uploadPhoto();
+    if (editId) {
+      const update: any = { name: form.name, role: form.role, bio: form.bio, sort_order: form.sort_order };
+      if (image_url) update.image_url = image_url;
+      const { error } = await supabase.from("team_members").update(update).eq("id", editId);
+      if (error) { toast.error(error.message); setSaving(false); return; }
+      toast.success("Member updated!");
+    } else {
+      const { error } = await supabase.from("team_members").insert({ ...form, image_url: image_url || null, active: true });
+      if (error) { toast.error(error.message); setSaving(false); return; }
+      toast.success("Member added!");
     }
-    await supabase.from("team_members").insert({ ...form, image_url, active: true });
-    setForm({ name: "", role: "", bio: "", sort_order: 0 }); setImageFile(null); setShowForm(false);
-    setAdding(false); load();
+    setSaving(false); cancel(); load();
   };
 
   const remove = async (id: string) => {
     if (!confirm("Remove this member?")) return;
     await supabase.from("team_members").update({ active: false }).eq("id", id);
+    toast.success("Removed.");
     load();
   };
+
+  const active = members.filter(m => m.active);
 
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
         <h2 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "1.25rem" }}>Board of Directors</h2>
-        <button onClick={() => setShowForm(!showForm)} style={{ padding: "0.5rem 1.25rem", borderRadius: "0.5rem", background: "var(--primary)", color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontFamily: "Montserrat, sans-serif", fontSize: "0.875rem" }}>
-          {showForm ? "Cancel" : "+ Add member"}
+        <button onClick={showForm && !editId ? cancel : startAdd}
+          style={{ padding: "0.5rem 1.25rem", borderRadius: "0.5rem", background: showForm && !editId ? "var(--muted)" : "var(--primary)", color: showForm && !editId ? "var(--foreground)" : "white", border: "none", cursor: "pointer", fontWeight: 600, fontFamily: "Montserrat, sans-serif", fontSize: "0.875rem" }}>
+          {showForm && !editId ? "Cancel" : "+ Add member"}
         </button>
       </div>
 
+      {/* Add / Edit form */}
       {showForm && (
-        <div style={{ marginBottom: "2rem", padding: "1.5rem", borderRadius: "1rem", border: "1px solid var(--border)", background: "var(--card)", display: "flex", flexDirection: "column", gap: "1rem", maxWidth: 560 }}>
-          {[{ key: "name", label: "Full name *" }, { key: "role", label: "Title / Role *" }, { key: "bio", label: "Bio" }].map(f => (
+        <div style={{ marginBottom: "2rem", padding: "1.5rem", borderRadius: "1rem", border: `2px solid ${editId ? "var(--primary)" : "var(--border)"}`, background: "var(--card)", display: "flex", flexDirection: "column", gap: "1rem", maxWidth: 560 }}>
+          <h3 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "1rem" }}>{editId ? "Edit member" : "New member"}</h3>
+          {[{ key: "name", label: "Full name *", type: "text" }, { key: "role", label: "Title / Role *", type: "text" }].map(f => (
             <div key={f.key}>
               <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.3rem" }}>{f.label}</label>
-              {f.key === "bio"
-                ? <textarea value={(form as any)[f.key]} onChange={e => setForm({ ...form, [f.key]: e.target.value })} rows={3} style={{ ...inp, resize: "vertical" }} />
-                : <input value={(form as any)[f.key]} onChange={e => setForm({ ...form, [f.key]: e.target.value })} style={inp} />}
+              <input value={(form as any)[f.key]} onChange={e => setForm({ ...form, [f.key]: e.target.value })} style={inp} />
             </div>
           ))}
           <div>
-            <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.3rem" }}>Sort order</label>
-            <input type="number" value={form.sort_order} onChange={e => setForm({ ...form, sort_order: parseInt(e.target.value) })} style={inp} />
+            <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.3rem" }}>Bio</label>
+            <textarea value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} rows={3} style={{ ...inp, resize: "vertical" }} />
           </div>
           <div>
-            <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.3rem" }}>Photo</label>
-            <input type="file" accept="image/*" onChange={e => setImageFile(e.target.files?.[0] ?? null)} style={inp} />
+            <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.3rem" }}>Sort order</label>
+            <input type="number" value={form.sort_order} onChange={e => setForm({ ...form, sort_order: parseInt(e.target.value) || 0 })} style={{ ...inp, width: 100 }} />
           </div>
-          <button onClick={add} disabled={adding || !form.name || !form.role} style={{ padding: "0.625rem 1.5rem", borderRadius: "0.5rem", background: "var(--primary)", color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontFamily: "Montserrat, sans-serif", alignSelf: "flex-start", opacity: adding ? 0.7 : 1 }}>
-            {adding ? "Adding…" : "Add member"}
-          </button>
+          <div>
+            <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.3rem" }}>{editId ? "Replace photo (optional)" : "Photo"}</label>
+            <input type="file" accept="image/*" onChange={e => setImageFile(e.target.files?.[0] ?? null)} style={inp} />
+            {imageFile && <p style={{ fontSize: "0.72rem", color: "var(--muted-foreground)", marginTop: "0.25rem" }}>Selected: {imageFile.name}</p>}
+          </div>
+          <div style={{ display: "flex", gap: "0.625rem" }}>
+            <button onClick={save} disabled={saving} style={{ padding: "0.625rem 1.5rem", borderRadius: "0.5rem", background: "var(--primary)", color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontFamily: "Montserrat, sans-serif", opacity: saving ? 0.7 : 1 }}>
+              {saving ? "Saving…" : editId ? "Save changes" : "Add member"}
+            </button>
+            <button onClick={cancel} style={{ padding: "0.625rem 1rem", borderRadius: "0.5rem", background: "var(--muted)", color: "var(--foreground)", border: "none", cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+          </div>
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "1rem" }}>
-        {members.filter(m => m.active).map(m => (
-          <div key={m.id} style={{ borderRadius: "0.875rem", border: "1px solid var(--border)", background: "var(--card)", padding: "1.25rem", display: "flex", gap: "1rem", alignItems: "flex-start" }}>
-            {m.image_url
-              ? <img src={m.image_url} alt={m.name} style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
-              : <div style={{ width: 56, height: 56, borderRadius: "50%", flexShrink: 0, display: "grid", placeItems: "center", background: "linear-gradient(135deg, var(--primary), var(--sky))", color: "white", fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "1rem" }}>{m.name.split(" ").map((s: string) => s[0]).slice(0, 2).join("")}</div>}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 600, fontSize: "0.95rem" }}>{m.name}</div>
+      {/* Members grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "1.25rem" }}>
+        {active.map(m => (
+          <div key={m.id} style={{ borderRadius: "0.875rem", border: `2px solid ${editId === m.id ? "var(--primary)" : "var(--border)"}`, background: "var(--card)", overflow: "hidden", transition: "border-color 0.15s" }}>
+            {/* Photo */}
+            <div style={{ aspectRatio: "1/1", background: "var(--muted)", overflow: "hidden", position: "relative" }}>
+              {m.image_url
+                ? <img src={m.image_url} alt={m.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : <div style={{ width: "100%", height: "100%", display: "grid", placeItems: "center", background: "linear-gradient(135deg, var(--primary), oklch(0.55 0.18 252))", color: "white", fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "2.5rem" }}>
+                    {m.name.split(" ").map((s: string) => s[0]).slice(0, 2).join("")}
+                  </div>}
+            </div>
+            {/* Info */}
+            <div style={{ padding: "1rem" }}>
+              <div style={{ fontWeight: 700, fontSize: "0.95rem", fontFamily: "Montserrat, sans-serif" }}>{m.name}</div>
               <div style={{ fontSize: "0.7rem", color: "var(--primary)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", marginTop: "0.125rem" }}>{m.role}</div>
-              {m.bio && <p style={{ fontSize: "0.75rem", color: "var(--muted-foreground)", marginTop: "0.375rem", lineHeight: 1.5 }}>{m.bio.slice(0, 100)}</p>}
-              <button onClick={() => remove(m.id)} style={{ marginTop: "0.5rem", fontSize: "0.7rem", color: "var(--destructive)", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>Remove</button>
+              {m.bio && <p style={{ fontSize: "0.75rem", color: "var(--muted-foreground)", marginTop: "0.375rem", lineHeight: 1.5 }}>{m.bio.slice(0, 100)}{m.bio.length > 100 ? "…" : ""}</p>}
+              <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem" }}>
+                <button onClick={() => startEdit(m)}
+                  style={{ flex: 1, padding: "0.375rem", borderRadius: "0.375rem", border: "1px solid var(--primary)", background: "none", color: "var(--primary)", cursor: "pointer", fontSize: "0.75rem", fontWeight: 600, fontFamily: "inherit" }}>
+                  Edit
+                </button>
+                <button onClick={() => remove(m.id)}
+                  style={{ flex: 1, padding: "0.375rem", borderRadius: "0.375rem", border: "1px solid var(--border)", background: "none", color: "var(--destructive)", cursor: "pointer", fontSize: "0.75rem", fontWeight: 600, fontFamily: "inherit" }}>
+                  Remove
+                </button>
+              </div>
             </div>
           </div>
         ))}
-        {members.filter(m => m.active).length === 0 && <p style={{ color: "var(--muted-foreground)", fontSize: "0.875rem" }}>No team members yet.</p>}
+        {active.length === 0 && <p style={{ color: "var(--muted-foreground)", fontSize: "0.875rem" }}>No team members yet.</p>}
       </div>
     </div>
   );
@@ -393,39 +440,83 @@ function TeamManager() {
 // ─────────────────────────────────────────
 function SponsorsManager() {
   const [list, setList] = useState<any[]>([]);
+  const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", website_url: "", level: "bronze", sort_order: 0, logo_url: "" });
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [adding, setAdding] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const load = () => supabase.from("sponsors").select("*").order("sort_order").then(({ data }) => setList(data ?? []));
   useEffect(() => { load(); }, []);
 
-  const add = async () => {
-    setAdding(true);
-    await supabase.from("sponsors").insert({ ...form, active: true });
-    setForm({ name: "", website_url: "", level: "bronze", sort_order: 0, logo_url: "" }); setShowForm(false); setAdding(false); load();
+  const startAdd = () => { setEditId(null); setForm({ name: "", website_url: "", level: "bronze", sort_order: list.length, logo_url: "" }); setLogoFile(null); setShowForm(true); };
+  const startEdit = (s: any) => { setEditId(s.id); setForm({ name: s.name, website_url: s.website_url || "", level: s.level, sort_order: s.sort_order || 0, logo_url: s.logo_url || "" }); setLogoFile(null); setShowForm(true); };
+  const cancel = () => { setShowForm(false); setEditId(null); };
+
+  const uploadLogo = async (): Promise<string | null> => {
+    if (!logoFile) return null;
+    const path = `${Date.now()}-${logoFile.name.replace(/\s+/g, "_")}`;
+    const { error } = await supabase.storage.from("sponsor-logos").upload(path, logoFile, { upsert: true });
+    if (error) { toast.error(error.message); return null; }
+    const { data } = supabase.storage.from("sponsor-logos").getPublicUrl(path);
+    return data.publicUrl;
+  };
+
+  const save = async () => {
+    if (!form.name) { toast.error("Company name is required."); return; }
+    setSaving(true);
+    const uploadedUrl = await uploadLogo();
+    const logo_url = uploadedUrl || form.logo_url;
+    if (editId) {
+      await supabase.from("sponsors").update({ ...form, logo_url }).eq("id", editId);
+      toast.success("Sponsor updated!");
+    } else {
+      await supabase.from("sponsors").insert({ ...form, logo_url, active: true });
+      toast.success("Sponsor added!");
+    }
+    setSaving(false); cancel(); load();
   };
 
   const toggle = async (id: string, active: boolean) => {
     await supabase.from("sponsors").update({ active }).eq("id", id); load();
   };
 
+  const remove = async (id: string) => {
+    if (!confirm("Remove this sponsor?")) return;
+    await supabase.from("sponsors").delete().eq("id", id);
+    toast.success("Removed."); load();
+  };
+
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
         <h2 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "1.25rem" }}>Sponsors / Partners</h2>
-        <button onClick={() => setShowForm(!showForm)} style={{ padding: "0.5rem 1.25rem", borderRadius: "0.5rem", background: "var(--primary)", color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontFamily: "Montserrat, sans-serif", fontSize: "0.875rem" }}>
-          {showForm ? "Cancel" : "+ Add sponsor"}
+        <button onClick={showForm && !editId ? cancel : startAdd}
+          style={{ padding: "0.5rem 1.25rem", borderRadius: "0.5rem", background: showForm && !editId ? "var(--muted)" : "var(--primary)", color: showForm && !editId ? "var(--foreground)" : "white", border: "none", cursor: "pointer", fontWeight: 600, fontFamily: "Montserrat, sans-serif", fontSize: "0.875rem" }}>
+          {showForm && !editId ? "Cancel" : "+ Add sponsor"}
         </button>
       </div>
+
       {showForm && (
-        <div style={{ marginBottom: "2rem", padding: "1.5rem", borderRadius: "1rem", border: "1px solid var(--border)", background: "var(--card)", display: "flex", flexDirection: "column", gap: "1rem", maxWidth: 560 }}>
-          {[{ key: "name", label: "Company name *" }, { key: "website_url", label: "Website URL" }, { key: "logo_url", label: "Logo URL (image link)" }].map(f => (
+        <div style={{ marginBottom: "2rem", padding: "1.5rem", borderRadius: "1rem", border: `2px solid ${editId ? "var(--primary)" : "var(--border)"}`, background: "var(--card)", display: "flex", flexDirection: "column", gap: "1rem", maxWidth: 560 }}>
+          <h3 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "1rem" }}>{editId ? "Edit sponsor" : "New sponsor"}</h3>
+          {[{ key: "name", label: "Company name *" }, { key: "website_url", label: "Website URL" }].map(f => (
             <div key={f.key}>
               <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.3rem" }}>{f.label}</label>
               <input value={(form as any)[f.key]} onChange={e => setForm({ ...form, [f.key]: e.target.value })} style={inp} />
             </div>
           ))}
+          {/* Logo upload OR URL */}
+          <div>
+            <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.3rem" }}>Logo — upload file</label>
+            <input type="file" accept="image/*" onChange={e => setLogoFile(e.target.files?.[0] ?? null)} style={inp} />
+            {logoFile && <p style={{ fontSize: "0.7rem", color: "var(--muted-foreground)", marginTop: "0.25rem" }}>Selected: {logoFile.name}</p>}
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.3rem" }}>Logo — or paste URL</label>
+            <input value={form.logo_url} onChange={e => setForm({ ...form, logo_url: e.target.value })} placeholder="https://…" style={inp} />
+            {form.logo_url && <img src={form.logo_url} alt="preview" style={{ height: 48, marginTop: "0.5rem", objectFit: "contain" }} onError={e => (e.currentTarget.style.display = "none")} />}
+          </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
             <div>
               <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.3rem" }}>Tier</label>
@@ -435,25 +526,33 @@ function SponsorsManager() {
             </div>
             <div>
               <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.3rem" }}>Sort order</label>
-              <input type="number" value={form.sort_order} onChange={e => setForm({ ...form, sort_order: parseInt(e.target.value) })} style={inp} />
+              <input type="number" value={form.sort_order} onChange={e => setForm({ ...form, sort_order: parseInt(e.target.value) || 0 })} style={{ ...inp, width: "100%" }} />
             </div>
           </div>
-          <button onClick={add} disabled={adding || !form.name} style={{ padding: "0.625rem 1.5rem", borderRadius: "0.5rem", background: "var(--primary)", color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontFamily: "Montserrat, sans-serif", alignSelf: "flex-start", opacity: adding ? 0.7 : 1 }}>
-            {adding ? "Adding…" : "Add sponsor"}
-          </button>
+          <div style={{ display: "flex", gap: "0.625rem" }}>
+            <button onClick={save} disabled={saving} style={{ padding: "0.625rem 1.5rem", borderRadius: "0.5rem", background: "var(--primary)", color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontFamily: "Montserrat, sans-serif", opacity: saving ? 0.7 : 1 }}>
+              {saving ? "Saving…" : editId ? "Save changes" : "Add sponsor"}
+            </button>
+            <button onClick={cancel} style={{ padding: "0.625rem 1rem", borderRadius: "0.5rem", background: "var(--muted)", color: "var(--foreground)", border: "none", cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+          </div>
         </div>
       )}
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
         {list.map(s => (
-          <div key={s.id} style={{ padding: "0.875rem 1.25rem", borderRadius: "0.75rem", border: "1px solid var(--border)", background: "var(--card)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem", opacity: s.active ? 1 : 0.5 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-              {s.logo_url && <img src={s.logo_url} alt={s.name} style={{ height: 40, width: "auto", objectFit: "contain" }} />}
-              <div>
-                <div style={{ fontWeight: 600 }}>{s.name}</div>
-                <div style={{ fontSize: "0.75rem", color: "var(--muted-foreground)", textTransform: "capitalize" }}>{s.level} · {s.website_url}</div>
-              </div>
+          <div key={s.id} style={{ padding: "0.875rem 1.25rem", borderRadius: "0.75rem", border: `1px solid ${editId === s.id ? "var(--primary)" : "var(--border)"}`, background: "var(--card)", display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap", opacity: s.active ? 1 : 0.5 }}>
+            {s.logo_url && s.logo_url.trim()
+              ? <img src={s.logo_url} alt={s.name} style={{ height: 48, width: "auto", maxWidth: 120, objectFit: "contain", flexShrink: 0 }} onError={e => (e.currentTarget.style.display = "none")} />
+              : <div style={{ width: 48, height: 48, borderRadius: "0.375rem", background: "var(--muted)", display: "grid", placeItems: "center", fontSize: "0.6rem", fontWeight: 700, color: "var(--muted-foreground)", flexShrink: 0 }}>NO LOGO</div>}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 600 }}>{s.name}</div>
+              <div style={{ fontSize: "0.75rem", color: "var(--muted-foreground)", textTransform: "capitalize" }}>{s.level} · {s.website_url || "no website"}</div>
             </div>
-            <button onClick={() => toggle(s.id, !s.active)} style={{ padding: "0.25rem 0.75rem", borderRadius: "9999px", border: "1px solid var(--border)", background: "none", cursor: "pointer", fontSize: "0.75rem", fontWeight: 600 }}>{s.active ? "Hide" : "Show"}</button>
+            <div style={{ display: "flex", gap: "0.375rem", flexShrink: 0 }}>
+              <button onClick={() => startEdit(s)} style={{ padding: "0.25rem 0.625rem", borderRadius: "0.375rem", border: "1px solid var(--primary)", background: "none", color: "var(--primary)", cursor: "pointer", fontSize: "0.75rem", fontWeight: 600 }}>Edit</button>
+              <button onClick={() => toggle(s.id, !s.active)} style={{ padding: "0.25rem 0.625rem", borderRadius: "0.375rem", border: "1px solid var(--border)", background: "none", cursor: "pointer", fontSize: "0.75rem", fontWeight: 600 }}>{s.active ? "Hide" : "Show"}</button>
+              <button onClick={() => remove(s.id)} style={{ padding: "0.25rem 0.625rem", borderRadius: "0.375rem", border: "1px solid var(--border)", background: "none", color: "var(--destructive)", cursor: "pointer", fontSize: "0.75rem", fontWeight: 600 }}>Delete</button>
+            </div>
           </div>
         ))}
         {list.length === 0 && <p style={{ color: "var(--muted-foreground)", fontSize: "0.875rem" }}>No sponsors yet.</p>}

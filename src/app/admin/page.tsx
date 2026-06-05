@@ -1,13 +1,13 @@
 "use client";
+import React, { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/context/auth";
-import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { refreshSiteSettings, DEFAULTS } from "@/lib/site-content";
-import { Save, Users, Store, Mic2, HandHeart, MessageSquare, Settings, Layout, AlignLeft, ShoppingBag, UserCircle, Globe, Star, ImageIcon } from "lucide-react";
+import { Save, Users, Store, Mic2, HandHeart, MessageSquare, Settings, Layout, AlignLeft, ShoppingBag, UserCircle, Globe, Star, ImageIcon, Calendar, MapPin } from "lucide-react";
 import { MediaManager } from "./MediaManager";
 import { toast } from "sonner";
 
-type Tab = "settings" | "header" | "footer" | "about" | "entertainment" | "home_extra" | "vendors_tab" | "artists_tab" | "volunteers_tab" | "messages" | "merch" | "team" | "sponsors_list" | "media";
+type Tab = "settings" | "header" | "footer" | "about" | "entertainment" | "home_extra" | "vendors_tab" | "artists_tab" | "volunteers_tab" | "messages" | "merch" | "team" | "sponsors_list" | "media" | "schedule" | "vendor_spots";
 
 const inp: React.CSSProperties = { width: "100%", padding: "0.5rem 0.875rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "var(--input)", fontSize: "0.875rem", fontFamily: "inherit", outline: "none" };
 
@@ -68,6 +68,9 @@ const FIELDS: Record<Tab, { key: string; label: string; multiline?: boolean }[]>
     { key: "about_mission", label: "Mission body", multiline: true },
     { key: "about_history_heading", label: "History heading" },
     { key: "about_history", label: "History body", multiline: true },
+    { key: "about_board_eyebrow", label: "Board section — eyebrow" },
+    { key: "about_board_title", label: "Board section — heading" },
+    { key: "about_board_subtitle", label: "Board section — subtitle", multiline: true },
   ],
   entertainment: [
     { key: "entertainment_eyebrow", label: "Eyebrow" },
@@ -103,7 +106,7 @@ const FIELDS: Record<Tab, { key: string; label: string; multiline?: boolean }[]>
     { key: "home_stat_3_value", label: "Stat 3 value" }, { key: "home_stat_3_label", label: "Stat 3 label" },
     { key: "home_stat_4_value", label: "Stat 4 value" }, { key: "home_stat_4_label", label: "Stat 4 label" },
   ],
-  vendors_tab: [], artists_tab: [], volunteers_tab: [], messages: [], merch: [], team: [], sponsors_list: [], media: [],
+  vendors_tab: [], artists_tab: [], volunteers_tab: [], messages: [], merch: [], team: [], sponsors_list: [], media: [], schedule: [], vendor_spots: [],
 };
 
 function SettingsEditor({ tab }: { tab: Tab }) {
@@ -562,6 +565,291 @@ function SponsorsManager() {
 }
 
 // ─────────────────────────────────────────
+// Schedule Manager
+// ─────────────────────────────────────────
+function ScheduleManager() {
+  const [items, setItems] = useState<any[]>([]);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ day: "saturday", start_time: "12:00", end_time: "13:00", title: "", area: "Main Stage", sort_order: 0 });
+
+  const load = () => supabase.from("festival_schedule").select("*").order("day").order("sort_order").then(({ data }) => setItems(data ?? []));
+  useEffect(() => { load(); }, []);
+
+  const startAdd = () => { setEditId(null); setForm({ day: "saturday", start_time: "12:00", end_time: "13:00", title: "", area: "Main Stage", sort_order: items.length }); setShowForm(true); };
+  const startEdit = (r: any) => { setEditId(r.id); setForm({ day: r.day, start_time: r.start_time || "", end_time: r.end_time || "", title: r.title, area: r.area || "Main Stage", sort_order: r.sort_order || 0 }); setShowForm(true); };
+  const cancel = () => { setShowForm(false); setEditId(null); };
+
+  const save = async () => {
+    if (!form.title) { toast.error("Title is required"); return; }
+    setSaving(true);
+    if (editId) {
+      await supabase.from("festival_schedule").update(form).eq("id", editId);
+      toast.success("Updated!");
+    } else {
+      await supabase.from("festival_schedule").insert({ ...form, active: true });
+      toast.success("Added!");
+    }
+    setSaving(false); cancel(); load();
+  };
+
+  const remove = async (id: string) => {
+    if (!confirm("Delete this schedule item?")) return;
+    await supabase.from("festival_schedule").delete().eq("id", id);
+    toast.success("Deleted."); load();
+  };
+
+  const days = ["saturday", "sunday"];
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+        <h2 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "1.25rem" }}>Festival Schedule</h2>
+        <button onClick={showForm && !editId ? cancel : startAdd}
+          style={{ padding: "0.5rem 1.25rem", borderRadius: "0.5rem", background: showForm && !editId ? "var(--muted)" : "var(--primary)", color: showForm && !editId ? "var(--foreground)" : "white", border: "none", cursor: "pointer", fontWeight: 600, fontFamily: "Montserrat, sans-serif", fontSize: "0.875rem" }}>
+          {showForm && !editId ? "Cancel" : "+ Add item"}
+        </button>
+      </div>
+
+      {showForm && (
+        <div style={{ marginBottom: "2rem", padding: "1.5rem", borderRadius: "1rem", border: `2px solid ${editId ? "var(--primary)" : "var(--border)"}`, background: "var(--card)", display: "flex", flexDirection: "column", gap: "1rem", maxWidth: 560 }}>
+          <h3 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "1rem" }}>{editId ? "Edit item" : "New schedule item"}</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+            <div>
+              <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.3rem" }}>Day</label>
+              <select value={form.day} onChange={e => setForm({ ...form, day: e.target.value })} style={inp}>
+                <option value="saturday">Saturday · July 11</option>
+                <option value="sunday">Sunday · July 12</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.3rem" }}>Area / Stage</label>
+              <input value={form.area} onChange={e => setForm({ ...form, area: e.target.value })} placeholder="Main Stage" style={inp} />
+            </div>
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.3rem" }}>Title *</label>
+            <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Opening Ceremony" style={inp} />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
+            <div>
+              <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.3rem" }}>Start time</label>
+              <input type="time" value={form.start_time} onChange={e => setForm({ ...form, start_time: e.target.value })} style={inp} />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.3rem" }}>End time</label>
+              <input type="time" value={form.end_time} onChange={e => setForm({ ...form, end_time: e.target.value })} style={inp} />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.3rem" }}>Sort order</label>
+              <input type="number" value={form.sort_order} onChange={e => setForm({ ...form, sort_order: parseInt(e.target.value) || 0 })} style={inp} />
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: "0.625rem" }}>
+            <button onClick={save} disabled={saving} style={{ padding: "0.625rem 1.5rem", borderRadius: "0.5rem", background: "var(--primary)", color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontFamily: "Montserrat, sans-serif", opacity: saving ? 0.7 : 1 }}>
+              {saving ? "Saving…" : editId ? "Save changes" : "Add item"}
+            </button>
+            <button onClick={cancel} style={{ padding: "0.625rem 1rem", borderRadius: "0.5rem", background: "var(--muted)", color: "var(--foreground)", border: "none", cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {days.map(day => {
+        const dayItems = items.filter(r => r.day === day);
+        return (
+          <div key={day} style={{ marginBottom: "2rem" }}>
+            <h3 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "1rem", fontWeight: 600, textTransform: "capitalize", padding: "0.5rem 0.875rem", background: "var(--primary)", color: "white", borderRadius: "0.5rem", marginBottom: "0.75rem", display: "inline-block" }}>
+              {day === "saturday" ? "Saturday · July 11" : "Sunday · July 12"}
+            </h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              {dayItems.length === 0 && <p style={{ fontSize: "0.875rem", color: "var(--muted-foreground)" }}>No items yet.</p>}
+              {dayItems.map(r => (
+                <div key={r.id} style={{ padding: "0.75rem 1rem", borderRadius: "0.625rem", border: `1px solid ${editId === r.id ? "var(--primary)" : "var(--border)"}`, background: "var(--card)", display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
+                  <span style={{ fontFamily: "monospace", fontSize: "0.75rem", color: "var(--primary)", fontWeight: 600, flexShrink: 0 }}>{r.start_time?.slice(0, 5)}–{r.end_time?.slice(0, 5)}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>{r.title}</div>
+                    {r.area && <div style={{ fontSize: "0.75rem", color: "var(--muted-foreground)" }}>{r.area}</div>}
+                  </div>
+                  <div style={{ display: "flex", gap: "0.375rem", flexShrink: 0 }}>
+                    <button onClick={() => startEdit(r)} style={{ padding: "0.25rem 0.625rem", borderRadius: "0.375rem", border: "1px solid var(--primary)", background: "none", color: "var(--primary)", cursor: "pointer", fontSize: "0.75rem", fontWeight: 600 }}>Edit</button>
+                    <button onClick={() => remove(r.id)} style={{ padding: "0.25rem 0.625rem", borderRadius: "0.375rem", border: "1px solid var(--border)", background: "none", color: "var(--destructive)", cursor: "pointer", fontSize: "0.75rem", fontWeight: 600 }}>Delete</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// Vendor Spot Editor (drag spots on map)
+// ─────────────────────────────────────────
+const MAP_W = 1181; const MAP_H = 1440;
+
+function VendorSpotEditor() {
+  const [spots, setSpots] = useState<any[]>([]);
+  const [mapUrl, setMapUrl] = useState("");
+  const [selected, setSelected] = useState<string | null>(null);
+  const [dragging, setDragging] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
+  const [newSpot, setNewSpot] = useState({ code: "", label: "", price_cents: 15000, w: 80, h: 80 });
+  const svgRef = React.useRef<SVGSVGElement>(null);
+
+  const load = () => supabase.from("vendor_spots").select("*").order("code").then(({ data }) => setSpots(data ?? []));
+  useEffect(() => {
+    load();
+    supabase.from("site_settings").select("value").eq("key", "vendor_map_image_url").single().then(({ data }) => {
+      setMapUrl(data?.value || "/assets/festival-map.jpg");
+    });
+  }, []);
+
+  const getSVGCoords = (e: React.MouseEvent) => {
+    if (!svgRef.current) return { x: 0, y: 0 };
+    const rect = svgRef.current.getBoundingClientRect();
+    const scaleX = MAP_W / rect.width;
+    const scaleY = MAP_H / rect.height;
+    return { x: Math.round((e.clientX - rect.left) * scaleX), y: Math.round((e.clientY - rect.top) * scaleY) };
+  };
+
+  const handleMouseMove = async (e: React.MouseEvent) => {
+    if (!dragging) return;
+    const { x, y } = getSVGCoords(e);
+    setSpots(prev => prev.map(s => s.id === dragging ? { ...s, x: x - s.w / 2, y: y - s.h / 2 } : s));
+  };
+
+  const handleMouseUp = async () => {
+    if (!dragging) return;
+    const spot = spots.find(s => s.id === dragging);
+    if (spot) {
+      await supabase.from("vendor_spots").update({ x: spot.x, y: spot.y }).eq("id", spot.id);
+      toast.success(`Spot ${spot.code} moved`);
+    }
+    setDragging(null);
+  };
+
+  const addSpot = async () => {
+    if (!newSpot.code) { toast.error("Code is required"); return; }
+    setSaving(true);
+    await supabase.from("vendor_spots").insert({ ...newSpot, x: MAP_W / 2, y: MAP_H / 2, status: "available" });
+    toast.success("Spot added!"); setSaving(false); setShowAdd(false);
+    setNewSpot({ code: "", label: "", price_cents: 15000, w: 80, h: 80 }); load();
+  };
+
+  const removeSpot = async (id: string) => {
+    if (!confirm("Delete this spot?")) return;
+    await supabase.from("vendor_spots").delete().eq("id", id);
+    toast.success("Deleted."); load();
+  };
+
+  const updateField = async (id: string, field: string, value: any) => {
+    await supabase.from("vendor_spots").update({ [field]: value }).eq("id", id);
+    setSpots(prev => prev.map(s => s.id === id ? { ...s, [field]: value } : s));
+  };
+
+  const dotColor = (status: string) => status === "available" ? "#10b981" : status === "pending" ? "#f59e0b" : "#ef4444";
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+        <div>
+          <h2 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "1.25rem" }}>Vendor Spot Positions</h2>
+          <p style={{ fontSize: "0.8rem", color: "var(--muted-foreground)", marginTop: "0.25rem" }}>Drag spots on the map to reposition. Click a spot to edit its details.</p>
+        </div>
+        <button onClick={() => setShowAdd(!showAdd)}
+          style={{ padding: "0.5rem 1.25rem", borderRadius: "0.5rem", background: showAdd ? "var(--muted)" : "var(--primary)", color: showAdd ? "var(--foreground)" : "white", border: "none", cursor: "pointer", fontWeight: 600, fontFamily: "Montserrat, sans-serif", fontSize: "0.875rem" }}>
+          {showAdd ? "Cancel" : "+ Add spot"}
+        </button>
+      </div>
+
+      {showAdd && (
+        <div style={{ marginBottom: "1.5rem", padding: "1.25rem", borderRadius: "1rem", border: "1px solid var(--border)", background: "var(--card)", maxWidth: 480, display: "flex", flexDirection: "column", gap: "0.875rem" }}>
+          <h3 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "1rem" }}>New vendor spot</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.875rem" }}>
+            <div><label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.3rem" }}>Code *</label><input value={newSpot.code} onChange={e => setNewSpot({ ...newSpot, code: e.target.value })} placeholder="A1" style={inp} /></div>
+            <div><label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.3rem" }}>Label</label><input value={newSpot.label} onChange={e => setNewSpot({ ...newSpot, label: e.target.value })} placeholder="Corner booth" style={inp} /></div>
+            <div><label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.3rem" }}>Price (cents)</label><input type="number" value={newSpot.price_cents} onChange={e => setNewSpot({ ...newSpot, price_cents: parseInt(e.target.value) || 0 })} style={inp} /><p style={{ fontSize: "0.7rem", color: "var(--muted-foreground)" }}>15000 = $150</p></div>
+            <div><label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.3rem" }}>Size (px)</label><div style={{ display: "flex", gap: "0.375rem" }}><input type="number" value={newSpot.w} onChange={e => setNewSpot({ ...newSpot, w: parseInt(e.target.value) || 80 })} style={{ ...inp, width: "50%" }} /><input type="number" value={newSpot.h} onChange={e => setNewSpot({ ...newSpot, h: parseInt(e.target.value) || 80 })} style={{ ...inp, width: "50%" }} /></div></div>
+          </div>
+          <p style={{ fontSize: "0.72rem", color: "var(--muted-foreground)" }}>Spot will be placed in the center of the map — drag it to the correct position.</p>
+          <button onClick={addSpot} disabled={saving} style={{ padding: "0.625rem 1.5rem", borderRadius: "0.5rem", background: "var(--primary)", color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontFamily: "Montserrat, sans-serif", alignSelf: "flex-start", opacity: saving ? 0.7 : 1 }}>
+            {saving ? "Adding…" : "Add spot"}
+          </button>
+        </div>
+      )}
+
+      <div style={{ display: "grid", gap: "1.5rem" }}>
+        <style>{`@media (min-width: 1024px) { .spot-editor-grid { grid-template-columns: 1fr 280px !important; } }`}</style>
+        <div className="spot-editor-grid" style={{ display: "grid", gap: "1rem", alignItems: "start" }}>
+          {/* Map */}
+          <div style={{ borderRadius: "0.875rem", overflow: "hidden", border: "1px solid var(--border)", cursor: dragging ? "grabbing" : "default", userSelect: "none" }}
+            onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
+            <svg ref={svgRef} viewBox={`0 0 ${MAP_W} ${MAP_H}`} style={{ display: "block", width: "100%", height: "auto" }}>
+              <image href={mapUrl} x={0} y={0} width={MAP_W} height={MAP_H} preserveAspectRatio="xMidYMid slice" />
+              {spots.map(s => {
+                const cx = s.x + s.w / 2; const cy = s.y + s.h / 2; const r = 22;
+                const fill = dotColor(s.status);
+                const isSelected = selected === s.id;
+                return (
+                  <g key={s.id} onMouseDown={e => { e.preventDefault(); setDragging(s.id); setSelected(s.id); }} style={{ cursor: "grab" }}>
+                    {isSelected && <circle cx={cx} cy={cy} r={r + 12} fill={fill} opacity={0.2} />}
+                    <circle cx={cx} cy={cy} r={r + 4} fill="none" stroke={isSelected ? "white" : fill} strokeWidth={isSelected ? 3 : 1.5} opacity={0.6} />
+                    <circle cx={cx} cy={cy} r={r} fill={fill} fillOpacity={0.85} stroke="white" strokeWidth={2} />
+                    <text x={cx} y={cy + 5} textAnchor="middle" style={{ fill: "white", fontWeight: "bold", fontSize: 14, pointerEvents: "none", fontFamily: "Montserrat, sans-serif" }}>{s.code}</text>
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
+
+          {/* Spot list */}
+          <div style={{ borderRadius: "0.875rem", border: "1px solid var(--border)", background: "var(--card)", overflow: "hidden", maxHeight: "80vh", overflowY: "auto" }}>
+            <div style={{ padding: "0.875rem 1rem", borderBottom: "1px solid var(--border)", fontFamily: "Montserrat, sans-serif", fontWeight: 600, fontSize: "0.9rem" }}>
+              {spots.length} spots
+            </div>
+            {spots.map(s => (
+              <div key={s.id} onClick={() => setSelected(s.id)}
+                style={{ padding: "0.625rem 1rem", borderBottom: "1px solid var(--border)", cursor: "pointer", background: selected === s.id ? "var(--muted)" : "transparent", transition: "background 0.15s" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.375rem" }}>
+                  <span style={{ width: 10, height: 10, borderRadius: "50%", background: dotColor(s.status), display: "inline-block", flexShrink: 0 }} />
+                  <span style={{ fontWeight: 600, fontSize: "0.875rem" }}>{s.code}</span>
+                  {s.label && <span style={{ fontSize: "0.75rem", color: "var(--muted-foreground)" }}>— {s.label}</span>}
+                </div>
+                {selected === s.id && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem", marginTop: "0.5rem" }}>
+                    <div style={{ display: "flex", gap: "0.375rem" }}>
+                      <input value={s.code} onChange={e => updateField(s.id, "code", e.target.value)} placeholder="Code" style={{ ...inp, flex: 1, padding: "0.25rem 0.5rem", fontSize: "0.75rem" }} />
+                      <input value={s.label || ""} onChange={e => updateField(s.id, "label", e.target.value)} placeholder="Label" style={{ ...inp, flex: 2, padding: "0.25rem 0.5rem", fontSize: "0.75rem" }} />
+                    </div>
+                    <div style={{ display: "flex", gap: "0.375rem", alignItems: "center" }}>
+                      <select value={s.status} onChange={e => updateField(s.id, "status", e.target.value)} style={{ ...inp, flex: 1, padding: "0.25rem 0.5rem", fontSize: "0.75rem" }}>
+                        <option value="available">Available</option>
+                        <option value="pending">Pending</option>
+                        <option value="occupied">Occupied</option>
+                      </select>
+                      <input type="number" value={s.price_cents} onChange={e => updateField(s.id, "price_cents", parseInt(e.target.value) || 0)} style={{ ...inp, flex: 1, padding: "0.25rem 0.5rem", fontSize: "0.75rem" }} />
+                    </div>
+                    <div style={{ display: "flex", gap: "0.375rem" }}>
+                      <span style={{ fontSize: "0.7rem", color: "var(--muted-foreground)" }}>x:{Math.round(s.x)} y:{Math.round(s.y)}</span>
+                      <button onClick={() => removeSpot(s.id)} style={{ marginLeft: "auto", fontSize: "0.7rem", color: "var(--destructive)", background: "none", border: "none", cursor: "pointer", padding: 0 }}>Delete</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+            {spots.length === 0 && <p style={{ padding: "1rem", fontSize: "0.875rem", color: "var(--muted-foreground)" }}>No spots yet.</p>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
 // Main Admin Page
 // ─────────────────────────────────────────
 export default function AdminPage() {
@@ -587,6 +875,8 @@ export default function AdminPage() {
     { id: "sponsors_list", label: "Sponsors", icon: Star, group: "People" },
     { id: "merch", label: "Merch", icon: ShoppingBag, group: "Store" },
     { id: "media", label: "Photos & Media", icon: ImageIcon, group: "Store" },
+    { id: "schedule", label: "Schedule", icon: Calendar, group: "Festival" },
+    { id: "vendor_spots", label: "Vendor Spots", icon: MapPin, group: "Festival" },
     { id: "vendors_tab", label: "Vendors", icon: Store, group: "Applications" },
     { id: "artists_tab", label: "Artists", icon: Mic2, group: "Applications" },
     { id: "volunteers_tab", label: "Volunteers", icon: HandHeart, group: "Applications" },
@@ -621,6 +911,8 @@ export default function AdminPage() {
           {(tab === "settings" || tab === "header" || tab === "footer" || tab === "about" || tab === "entertainment" || tab === "home_extra") && <SettingsEditor tab={tab} />}
           {tab === "merch" && <MerchManager />}
           {tab === "media" && <MediaManager />}
+          {tab === "schedule" && <ScheduleManager />}
+          {tab === "vendor_spots" && <VendorSpotEditor />}
           {tab === "team" && <TeamManager />}
           {tab === "sponsors_list" && <SponsorsManager />}
           {tab === "vendors_tab" && <><h2 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "1.25rem", marginBottom: "0.5rem" }}>Vendor Applications</h2><AppList table="vendor_applications" titleField="business_name" /></>}
@@ -632,4 +924,3 @@ export default function AdminPage() {
     </div>
   );
 }
-import React from "react";

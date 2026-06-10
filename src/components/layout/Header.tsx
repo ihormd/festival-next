@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
-import { Menu, X, ChevronDown, ShoppingBag, User } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Menu, X, ChevronDown, User } from "lucide-react";
 import { useAuth } from "@/context/auth";
 import { useSiteSettings } from "@/lib/site-content";
 import { usePathname } from "next/navigation";
@@ -9,10 +9,18 @@ import { usePathname } from "next/navigation";
 export function Header() {
   const [open, setOpen] = useState(false);
   const [involvedOpen, setInvolvedOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const { user, isAdmin, signOut } = useAuth();
   const s = useSiteSettings();
   const pathname = usePathname();
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const mainNav = [
     { href: "/festival", label: s.header_nav_festival },
@@ -30,7 +38,7 @@ export function Header() {
   ];
 
   return (
-    <header style={{ position: "sticky", top: 0, zIndex: 40, borderBottom: "1px solid var(--border)", background: "var(--background)", backdropFilter: "blur(12px)" }}>
+    <header style={{ position: "sticky", top: 0, zIndex: 40, borderBottom: scrolled ? "1px solid var(--border)" : "1px solid transparent", background: scrolled ? "rgba(255,253,245,0.88)" : "rgba(255,253,245,0.6)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", transition: "background 0.3s, border-color 0.3s, box-shadow 0.3s", boxShadow: scrolled ? "0 2px 20px rgba(0,0,0,0.06)" : "none" }}>
       <div className="container-page" style={{ display: "flex", height: 80, alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
         <Link href="/" style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
           <img src={s.logo_url || "/assets/nuff-logo.png"} alt={s.header_logo_alt} style={{ height: 56, width: "auto" }} />

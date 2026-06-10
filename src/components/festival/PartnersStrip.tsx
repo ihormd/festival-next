@@ -10,10 +10,10 @@ export function PartnersStrip() {
 
   useEffect(() => {
     dbQuery<Sponsor>({ table: "sponsors", filters: { active: true }, order: { col: "sort_order" } })
-      .then(data => setSponsors(data));
+      .then(setSponsors);
   }, []);
 
-  const loop = sponsors.length > 0 ? [...sponsors, ...sponsors] : [];
+  const loop = sponsors.length > 0 ? [...sponsors, ...sponsors, ...sponsors] : [];
 
   return (
     <section style={{ background: "var(--cream)", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)" }}>
@@ -30,29 +30,34 @@ export function PartnersStrip() {
           <p style={{ fontSize: "0.875rem", color: "var(--muted-foreground)" }}>Partner roster coming soon.</p>
         ) : (
           <div className="marquee-mask" style={{ overflow: "hidden" }}>
-            <div className="animate-marquee" style={{ display: "flex", width: "max-content", alignItems: "center", gap: "4rem" }}>
+            <div className="animate-marquee" style={{ display: "flex", width: "max-content", alignItems: "center", gap: "5rem" }}>
               {loop.map((sp, i) => {
                 const hasLogo = sp.logo_url && sp.logo_url.trim() !== "";
                 const inner = hasLogo ? (
-                  <img
-                    src={sp.logo_url!}
-                    alt={sp.name}
-                    style={{ height: 80, width: "auto", maxWidth: 200, objectFit: "contain", filter: "grayscale(1)", opacity: 0.75, transition: "all 0.25s" }}
-                    onMouseEnter={e => { (e.currentTarget as any).style.filter = "grayscale(0)"; (e.currentTarget as any).style.opacity = "1"; }}
-                    onMouseLeave={e => { (e.currentTarget as any).style.filter = "grayscale(1)"; (e.currentTarget as any).style.opacity = "0.75"; }}
-                    onError={e => {
-                      // if image fails, show name fallback
-                      const parent = e.currentTarget.parentElement;
-                      if (parent) parent.innerHTML = `<div style="height:80px;min-width:160px;border-radius:0.5rem;background:white;border:1px dashed #ccc;display:grid;place-items:center;padding:0 1.5rem;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#888;text-align:center">${sp.name}</div>`;
-                    }}
-                  />
+                  <div style={{ height: 120, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <img
+                      src={sp.logo_url!}
+                      alt={sp.name}
+                      style={{ maxHeight: 120, maxWidth: 240, width: "auto", objectFit: "contain", filter: "grayscale(0.3)", opacity: 0.85, transition: "all 0.3s" }}
+                      onMouseEnter={e => { (e.currentTarget as any).style.filter = "grayscale(0)"; (e.currentTarget as any).style.opacity = "1"; (e.currentTarget as any).style.transform = "scale(1.05)"; }}
+                      onMouseLeave={e => { (e.currentTarget as any).style.filter = "grayscale(0.3)"; (e.currentTarget as any).style.opacity = "0.85"; (e.currentTarget as any).style.transform = "scale(1)"; }}
+                      onError={e => {
+                        const el = e.currentTarget;
+                        el.style.display = "none";
+                        const div = document.createElement("div");
+                        div.style.cssText = "height:120px;min-width:200px;border-radius:0.5rem;background:white;border:1px dashed #ddd;display:grid;place-items:center;padding:0 1.5rem;font-size:0.875rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#888;text-align:center";
+                        div.textContent = sp.name;
+                        el.parentElement?.appendChild(div);
+                      }}
+                    />
+                  </div>
                 ) : (
-                  <div style={{ height: 80, minWidth: 180, borderRadius: "0.5rem", background: "white", border: "1px dashed var(--border)", display: "grid", placeItems: "center", padding: "0 1.5rem", fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted-foreground)", textAlign: "center" }}>
+                  <div style={{ height: 120, minWidth: 200, borderRadius: "0.5rem", background: "white", border: "1px dashed var(--border)", display: "grid", placeItems: "center", padding: "0 1.5rem", fontSize: "0.875rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted-foreground)", textAlign: "center" }}>
                     {sp.name}
                   </div>
                 );
 
-                return sp.website_url && sp.website_url.trim() ? (
+                return sp.website_url?.trim() ? (
                   <a key={`${sp.id}-${i}`} href={sp.website_url} target="_blank" rel="noopener noreferrer" style={{ flexShrink: 0, display: "block" }}>
                     {inner}
                   </a>

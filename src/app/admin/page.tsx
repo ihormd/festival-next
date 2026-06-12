@@ -448,9 +448,18 @@ function SponsorsManager() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [bucketFiles, setBucketFiles] = useState<{ name: string; url: string }[]>([]);
 
   const load = () => supabase.from("sponsors").select("*").order("sort_order").then(({ data }) => setList(data ?? []));
-  useEffect(() => { load(); }, []);
+  const loadBucket = async () => {
+    const { data } = await supabase.storage.from("sponsor-logos").list("", { limit: 100, sortBy: { column: "created_at", order: "desc" } });
+    const files = (data ?? []).filter(f => f.name !== ".emptyFolderPlaceholder").map(f => {
+      const { data: u } = supabase.storage.from("sponsor-logos").getPublicUrl(f.name);
+      return { name: f.name, url: u.publicUrl };
+    });
+    setBucketFiles(files);
+  };
+  useEffect(() => { load(); loadBucket(); }, []);
 
   const startAdd = () => { setEditId(null); setForm({ name: "", website_url: "", level: "bronze", sort_order: list.length, logo_url: "" }); setLogoFile(null); setShowForm(true); };
   const startEdit = (s: any) => { setEditId(s.id); setForm({ name: s.name, website_url: s.website_url || "", level: s.level, sort_order: s.sort_order || 0, logo_url: s.logo_url || "" }); setLogoFile(null); setShowForm(true); };
@@ -520,6 +529,19 @@ function SponsorsManager() {
             <input value={form.logo_url} onChange={e => setForm({ ...form, logo_url: e.target.value })} placeholder="https://…" style={inp} />
             {form.logo_url && <img src={form.logo_url} alt="preview" style={{ height: 48, marginTop: "0.5rem", objectFit: "contain" }} onError={e => (e.currentTarget.style.display = "none")} />}
           </div>
+          {bucketFiles.length > 0 && (
+            <div>
+              <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.5rem" }}>Or pick from already-uploaded logos (Photos & Media)</label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                {bucketFiles.map(f => (
+                  <button key={f.name} type="button" onClick={() => setForm({ ...form, logo_url: f.url })}
+                    style={{ padding: "0.375rem", borderRadius: "0.5rem", border: `2px solid ${form.logo_url === f.url ? "var(--primary)" : "var(--border)"}`, background: "white", cursor: "pointer", height: 56, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <img src={f.url} alt="" style={{ maxHeight: 40, maxWidth: 80, objectFit: "contain" }} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
             <div>
               <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.3rem" }}>Tier</label>

@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { supabase } from "@/lib/supabase";
+import { notifyAdmin } from "@/lib/notify";
 import { useAuth } from "@/context/auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -43,6 +44,7 @@ export default function VolunteerApplyPage() {
     const { error } = await supabase.from("volunteer_applications").insert({ ...form, user_id: user.id, interests: Array.from(selectedInterests), selected_shifts: Array.from(selectedShifts) });
     setSubmitting(false);
     if (error) { toast.error(error.message); return; }
+    notifyAdmin("volunteer_application", { ...form, interests: Array.from(selectedInterests), selected_shifts: Array.from(selectedShifts) });
     toast.success("Thanks! We'll confirm your shifts by email.");
     router.push("/dashboard");
   };

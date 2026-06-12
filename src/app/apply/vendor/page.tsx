@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { notifyAdmin } from "@/lib/notify";
 import { useAuth } from "@/context/auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -41,6 +42,7 @@ export default function VendorApplyPage() {
     const { error } = await supabase.from("vendor_applications").insert({ ...form, requested_spot_id: form.requested_spot_id || null, user_id: user.id, document_urls });
     setSubmitting(false);
     if (error) { alert(error.message); return; }
+    notifyAdmin("vendor_application", { ...form, document_count: document_urls.length });
     setDone(true);
   };
 

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CreditCard, Mail, Copy, Check } from "lucide-react";
 import { useSiteSettings } from "@/lib/site-content";
+import { notifyAdmin } from "@/lib/notify";
 
 type Spot = { id: string; code: string; label: string | null; status: "available" | "pending" | "occupied"; x: number; y: number; w: number; h: number; price_cents: number; };
 type BookingResult = { id: string; order_number: string; amount_cents: number; payment_method: "stripe" | "etransfer"; pending_until: string | null; };
@@ -59,6 +60,7 @@ export default function VendorsPage() {
       });
       if (error) throw error;
       setBooking(data as BookingResult);
+      notifyAdmin("vendor_booking", { spot_code: selected.code, business_name: form.business_name, contact_name: form.contact_name, contact_email: form.contact_email, contact_phone: form.contact_phone, payment_method: method, amount: `$${((data as BookingResult).amount_cents / 100).toFixed(2)}`, order_number: (data as BookingResult).order_number });
       if (method === "etransfer") setStep("etransfer-done");
       else {
         const { data: fresh } = await supabase.from("vendor_spots").select("*").order("code");

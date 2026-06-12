@@ -3,6 +3,7 @@ import { useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { notifyAdmin } from "@/lib/notify";
 import { useSiteSettings } from "@/lib/site-content";
 
 const inp: React.CSSProperties = { width: "100%", padding: "0.5rem 0.875rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "var(--input)", fontSize: "0.9rem", fontFamily: "inherit", outline: "none" };
@@ -21,6 +22,7 @@ export default function ContactPage() {
     const message = String(fd.get("message") ?? "");
     setBusy(true);
     await supabase.from("contact_messages").insert({ name, email, subject, message });
+    notifyAdmin("contact", { name, email, subject, message });
     setBusy(false);
     setDone(true);
     (e.target as HTMLFormElement).reset();

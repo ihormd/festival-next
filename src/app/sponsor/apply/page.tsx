@@ -3,6 +3,7 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { supabase } from "@/lib/supabase";
+import { notifyAdmin } from "@/lib/notify";
 import { toast } from "sonner";
 import Link from "next/link";
 
@@ -21,6 +22,7 @@ function SponsorApplyForm() {
     const { error } = await supabase.from("sponsorship_inquiries").insert({ ...form, festival_year: 2026, status: "pending" });
     setLoading(false);
     if (error) { toast.error(error.message); return; }
+    notifyAdmin("sponsorship_inquiry", form);
     toast.success("Inquiry received! Our team will contact you shortly.");
     setDone(true);
   };

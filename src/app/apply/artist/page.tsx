@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { supabase } from "@/lib/supabase";
+import { notifyAdmin } from "@/lib/notify";
 import { useAuth } from "@/context/auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -47,6 +48,7 @@ export default function ArtistApplyPage() {
     });
     setSubmitting(false);
     if (error) { toast.error(error.message); return; }
+    notifyAdmin("artist_application", { stage_name: form.stage_name, contact_email: form.contact_email, contact_phone: form.contact_phone, stage_preference: form.stage_preference, set_length_minutes: form.set_length_minutes, bio: form.bio });
     toast.success("Submitted! Our booking team will review and reply.");
     router.push("/dashboard");
   };

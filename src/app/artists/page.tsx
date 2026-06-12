@@ -3,6 +3,7 @@ import { useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Mic2, Users, Calendar } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { notifyAdmin } from "@/lib/notify";
 import { useAuth } from "@/context/auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -33,6 +34,7 @@ export default function ArtistsPage() {
     });
     setLoading(false);
     if (error) { toast.error(error.message); return; }
+    notifyAdmin("artist_application", { stage_name: form.stage_name, performance_type: form.performance_type, contact_email: form.contact_email, contact_phone: form.contact_phone, stage_preference: form.stage_preference, set_length_minutes: form.set_length_minutes });
     toast.success("Submitted! Our booking team will review and reply.");
     router.push("/dashboard");
   };

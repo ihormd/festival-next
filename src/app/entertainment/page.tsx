@@ -3,17 +3,20 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { useSiteSettings } from "@/lib/site-content";
 import Link from "next/link";
 
-const lineup = [
-  { time: "Sat 12:00", act: "Opening Ceremony", note: "Welcome with Hopak dance ensemble" },
-  { time: "Sat 14:00", act: "Bandura Live", note: "Traditional string instrument" },
-  { time: "Sat 17:00", act: "Folk Dance Showcase", note: "5 ensembles · all ages" },
-  { time: "Sat 20:00", act: "Headliner — TBA", note: "Modern Ukrainian artist" },
-  { time: "Sun 13:00", act: "Pysanky Workshop", note: "Egg painting masterclass" },
-  { time: "Sun 16:00", act: "Vyshyvanka Parade", note: "Traditional embroidered shirts" },
-];
+const DEFAULT_LINEUP = `Sat 12:00 | Opening Ceremony | Welcome with Hopak dance ensemble
+Sat 14:00 | Bandura Live | Traditional string instrument
+Sat 17:00 | Folk Dance Showcase | 5 ensembles · all ages
+Sat 20:00 | Headliner — TBA | Modern Ukrainian artist
+Sun 13:00 | Pysanky Workshop | Egg painting masterclass
+Sun 16:00 | Vyshyvanka Parade | Traditional embroidered shirts`;
 
 export default function EntertainmentPage() {
   const s = useSiteSettings();
+  const lineup = (s.entertainment_lineup || DEFAULT_LINEUP)
+    .split("\n")
+    .map(line => line.split("|").map(p => p.trim()))
+    .filter(parts => parts.length >= 2 && parts[0])
+    .map(([time, act, note]) => ({ time, act, note: note || "" }));
   return (
     <>
       <PageHeader eyebrow={s.entertainment_eyebrow || "Live performances"} title={s.entertainment_title || "Entertainment"} subtitle={s.entertainment_subtitle || "Two days of music, dance, and cultural performances."} />

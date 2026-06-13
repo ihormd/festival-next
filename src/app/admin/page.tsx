@@ -79,6 +79,7 @@ const FIELDS: Record<Tab, { key: string; label: string; multiline?: boolean }[]>
     { key: "entertainment_schedule_title", label: "Schedule section title" },
     { key: "entertainment_cta_title", label: "CTA title" },
     { key: "entertainment_cta_body", label: "CTA body", multiline: true },
+    { key: "entertainment_lineup", label: "Weekend lineup (one per line: Time | Act | Note)", multiline: true },
   ],
   home_extra: [
     { key: "home_pillars_eyebrow", label: "Pillars eyebrow" },
@@ -137,7 +138,7 @@ function SettingsEditor({ tab }: { tab: Tab }) {
         <div key={f.key}>
           <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, marginBottom: "0.375rem", color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{f.label}</label>
           {f.multiline
-            ? <textarea value={values[f.key] ?? ""} onChange={e => setValues({ ...values, [f.key]: e.target.value })} rows={3} style={{ ...inp, resize: "vertical" }} />
+            ? <textarea value={values[f.key] ?? ""} onChange={e => setValues({ ...values, [f.key]: e.target.value })} rows={f.key === "entertainment_lineup" ? 8 : 3} style={{ ...inp, resize: "vertical", fontFamily: f.key === "entertainment_lineup" ? "monospace" : "inherit", fontSize: f.key === "entertainment_lineup" ? "0.8rem" : inp.fontSize }} />
             : <input value={values[f.key] ?? ""} onChange={e => setValues({ ...values, [f.key]: e.target.value })} style={inp} />}
         </div>
       ))}

@@ -61,6 +61,7 @@ export const DEFAULTS: SiteSettings = {
   entertainment_schedule_title: "Weekend lineup",
   entertainment_cta_title: "Are you a performer?",
   entertainment_cta_body: "Apply to perform on stage at NUFF 2026.",
+  entertainment_lineup: "Sat 12:00 | Opening Ceremony | Welcome with Hopak dance ensemble\nSat 14:00 | Bandura Live | Traditional string instrument\nSat 17:00 | Folk Dance Showcase | 5 ensembles · all ages\nSat 20:00 | Headliner — TBA | Modern Ukrainian artist\nSun 13:00 | Pysanky Workshop | Egg painting masterclass\nSun 16:00 | Vyshyvanka Parade | Traditional embroidered shirts",
   seo_title: "NUFF — Niagara Ukrainian Family Festival",
   seo_description: "A celebration of Ukrainian heritage in the heart of Niagara. July 11–12, 2026.",
   hero_image_url: "/assets/hero-festival.jpg",

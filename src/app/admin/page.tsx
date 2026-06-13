@@ -890,37 +890,50 @@ function VendorSpotEditor() {
 // Main Admin Page
 // ─────────────────────────────────────────
 export default function AdminPage() {
-  const { isAdmin, loading, adminLoading } = useAuth();
+  const { isAdmin, isModerator, isViewer, loading, adminLoading } = useAuth();
   const [tab, setTab] = useState<Tab>("settings");
 
+  useEffect(() => {
+    // Default tab based on role
+    if (!isAdmin && isModerator) setTab("vendors_tab");
+    else if (!isAdmin && !isModerator && isViewer) setTab("vendors_tab");
+  }, [isAdmin, isModerator, isViewer]);
+
   if (loading || adminLoading) return <div className="container-page" style={{ paddingTop: "4rem" }}>Loading…</div>;
-  if (!isAdmin) return (
+  if (!isAdmin && !isModerator && !isViewer) return (
     <div className="container-page" style={{ paddingTop: "4rem" }}>
-      <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "1.5rem", fontWeight: 700 }}>Admin access required</h1>
-      <p style={{ color: "var(--muted-foreground)", marginTop: "0.5rem" }}>Sign in with an admin account or contact the organizer.</p>
+      <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "1.5rem", fontWeight: 700 }}>Access required</h1>
+      <p style={{ color: "var(--muted-foreground)", marginTop: "0.5rem" }}>Contact the NUFF admin to get access.</p>
     </div>
   );
 
-  const tabs: { id: Tab; label: string; icon: any; group: string }[] = [
-    { id: "settings", label: "General", icon: Settings, group: "Site content" },
-    { id: "header", label: "Header", icon: Layout, group: "Site content" },
-    { id: "footer", label: "Footer", icon: AlignLeft, group: "Site content" },
-    { id: "home_extra", label: "Home page", icon: Globe, group: "Site content" },
-    { id: "about", label: "About", icon: Star, group: "Site content" },
-    { id: "entertainment", label: "Entertainment", icon: Mic2, group: "Site content" },
-    { id: "applications", label: "Artists & Volunteers", icon: HandHeart, group: "Site content" },
-    { id: "team", label: "Board", icon: UserCircle, group: "People" },
-    { id: "sponsors_list", label: "Sponsors", icon: Star, group: "People" },
-    { id: "merch", label: "Merch", icon: ShoppingBag, group: "Store" },
-    { id: "media", label: "Photos & Media", icon: ImageIcon, group: "Store" },
-    { id: "schedule", label: "Schedule", icon: Calendar, group: "Festival" },
-    { id: "vendor_spots", label: "Vendor Spots", icon: MapPin, group: "Festival" },
-    { id: "vendors_tab", label: "Vendors", icon: Store, group: "Applications" },
-    { id: "artists_tab", label: "Artists", icon: Mic2, group: "Applications" },
-    { id: "volunteers_tab", label: "Volunteers", icon: HandHeart, group: "Applications" },
-    { id: "messages", label: "Messages", icon: MessageSquare, group: "Applications" },
-    { id: "users", label: "Users & Roles", icon: Users, group: "Applications" },
+  const allTabs: { id: Tab; label: string; icon: any; group: string; minRole: "admin" | "moderator" | "viewer" }[] = [
+    { id: "settings", label: "General", icon: Settings, group: "Site content", minRole: "admin" },
+    { id: "header", label: "Header", icon: Layout, group: "Site content", minRole: "admin" },
+    { id: "footer", label: "Footer", icon: AlignLeft, group: "Site content", minRole: "admin" },
+    { id: "home_extra", label: "Home page", icon: Globe, group: "Site content", minRole: "admin" },
+    { id: "about", label: "About", icon: Star, group: "Site content", minRole: "admin" },
+    { id: "entertainment", label: "Entertainment", icon: Mic2, group: "Site content", minRole: "admin" },
+    { id: "applications", label: "Artists & Volunteers", icon: HandHeart, group: "Site content", minRole: "admin" },
+    { id: "team", label: "Board", icon: UserCircle, group: "People", minRole: "admin" },
+    { id: "sponsors_list", label: "Sponsors", icon: Star, group: "People", minRole: "admin" },
+    { id: "merch", label: "Merch", icon: ShoppingBag, group: "Store", minRole: "admin" },
+    { id: "media", label: "Photos & Media", icon: ImageIcon, group: "Store", minRole: "admin" },
+    { id: "schedule", label: "Schedule", icon: Calendar, group: "Festival", minRole: "admin" },
+    { id: "vendor_spots", label: "Vendor Spots", icon: MapPin, group: "Festival", minRole: "admin" },
+    { id: "vendors_tab", label: "Vendors", icon: Store, group: "Applications", minRole: "viewer" },
+    { id: "artists_tab", label: "Artists", icon: Mic2, group: "Applications", minRole: "viewer" },
+    { id: "volunteers_tab", label: "Volunteers", icon: HandHeart, group: "Applications", minRole: "viewer" },
+    { id: "messages", label: "Messages", icon: MessageSquare, group: "Applications", minRole: "viewer" },
+    { id: "users", label: "Users & Roles", icon: Users, group: "Applications", minRole: "admin" },
   ];
+
+  // Filter tabs by current user's role
+  const tabs = allTabs.filter(t => {
+    if (t.minRole === "admin") return isAdmin;
+    if (t.minRole === "moderator") return isModerator;
+    return isViewer; // viewer
+  });
 
   const groups = [...new Set(tabs.map(t => t.group))];
 

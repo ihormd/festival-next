@@ -9,6 +9,9 @@ interface AuthCtx {
   loading: boolean;
   adminLoading: boolean;
   isAdmin: boolean;
+  isModerator: boolean;
+  isViewer: boolean;
+  roles: string[];
   signOut: () => Promise<void>;
 }
 
@@ -17,7 +20,7 @@ const Ctx = createContext<AuthCtx | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [roles, setRoles] = useState<string[]>([]);
   const [adminLoading, setAdminLoading] = useState(true);
 
   useEffect(() => {
@@ -28,14 +31,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (loading) return;
-    if (!session?.user) { setIsAdmin(false); setAdminLoading(false); return; }
+    if (!session?.user) { setRoles([]); setAdminLoading(false); return; }
     setAdminLoading(true);
-    supabase.from("user_roles").select("role").eq("user_id", session.user.id).eq("role", "admin").maybeSingle()
-      .then(({ data }) => { setIsAdmin(!!data); setAdminLoading(false); });
+    supabase.from("user_roles").select("role").eq("user_id", session.user.id)
+      .then(({ data }) => {
+        setRoles((data ?? []).map((r: any) => r.role));
+        setAdminLoading(false);
+      });
   }, [session, loading]);
 
+  const isAdmin = roles.includes("admin");
+  const isModerator = roles.includes("moderator") || isAdmin;
+  const isViewer = roles.includes("viewer") || isModerator;
+
   return (
-    <Ctx.Provider value={{ session, user: session?.user ?? null, loading, adminLoading, isAdmin, signOut: async () => { await supabase.auth.signOut(); } }}>
+    <Ctx.Provider value={{ session, user: session?.user ?? null, loading, adminLoading, isAdmin, isModerator, isViewer, roles, signOut: async () => { await supabase.auth.signOut(); } }}>
       {children}
     </Ctx.Provider>
   );

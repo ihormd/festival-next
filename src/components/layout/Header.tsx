@@ -10,7 +10,7 @@ export function Header() {
   const [open, setOpen] = useState(false);
   const [involvedOpen, setInvolvedOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, isAdmin, isModerator, isViewer, signOut } = useAuth();
   const s = useSiteSettings();
   const pathname = usePathname();
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
@@ -77,7 +77,7 @@ export function Header() {
           {user ? (
             <>
               <Link href="/dashboard"><button style={{ padding: "0.375rem 0.75rem", borderRadius: "0.5rem", border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.375rem", fontSize: "0.875rem" }}><User size={16} />Account</button></Link>
-              {isAdmin && <Link href="/admin"><button style={{ padding: "0.375rem 0.75rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "none", cursor: "pointer", fontSize: "0.875rem" }}>Admin</button></Link>}
+              {(isAdmin || isModerator || isViewer) && <Link href="/admin"><button style={{ padding: "0.375rem 0.75rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "none", cursor: "pointer", fontSize: "0.875rem" }}>Admin</button></Link>}
               <button onClick={signOut} style={{ padding: "0.375rem 0.75rem", borderRadius: "0.5rem", border: "none", background: "none", cursor: "pointer", fontSize: "0.875rem" }}>Sign out</button>
             </>
           ) : (
@@ -103,7 +103,7 @@ export function Header() {
               {user ? (
                 <>
                   <Link href="/dashboard" onClick={() => setOpen(false)}><button style={{ width: "100%", padding: "0.625rem", borderRadius: "0.5rem", border: "none", background: "none", cursor: "pointer", textAlign: "left", fontSize: "1rem" }}>Account</button></Link>
-                  {isAdmin && <Link href="/admin" onClick={() => setOpen(false)}><button style={{ width: "100%", padding: "0.625rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "none", cursor: "pointer", fontSize: "1rem" }}>Admin</button></Link>}
+                  {(isAdmin || isModerator || isViewer) && <Link href="/admin" onClick={() => setOpen(false)}><button style={{ width: "100%", padding: "0.625rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "none", cursor: "pointer", fontSize: "1rem" }}>Admin</button></Link>}
                   <button onClick={() => { signOut(); setOpen(false); }} style={{ padding: "0.625rem", borderRadius: "0.5rem", border: "none", background: "none", cursor: "pointer", textAlign: "left", fontSize: "1rem" }}>Sign out</button>
                 </>
               ) : (

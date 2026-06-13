@@ -7,7 +7,7 @@ import { Save, Users, Store, Mic2, HandHeart, MessageSquare, Settings, Layout, A
 import { MediaManager } from "./MediaManager";
 import { toast } from "sonner";
 
-type Tab = "settings" | "header" | "footer" | "about" | "entertainment" | "home_extra" | "vendors_tab" | "artists_tab" | "volunteers_tab" | "messages" | "merch" | "team" | "sponsors_list" | "media" | "schedule" | "vendor_spots";
+type Tab = "settings" | "header" | "footer" | "about" | "entertainment" | "applications" | "home_extra" | "vendors_tab" | "artists_tab" | "volunteers_tab" | "messages" | "merch" | "team" | "sponsors_list" | "media" | "schedule" | "vendor_spots";
 
 const inp: React.CSSProperties = { width: "100%", padding: "0.5rem 0.875rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "var(--input)", fontSize: "0.875rem", fontFamily: "inherit", outline: "none" };
 
@@ -80,6 +80,20 @@ const FIELDS: Record<Tab, { key: string; label: string; multiline?: boolean }[]>
     { key: "entertainment_cta_title", label: "CTA title" },
     { key: "entertainment_cta_body", label: "CTA body", multiline: true },
     { key: "entertainment_lineup", label: "Weekend lineup (one per line: Time | Act | Note)", multiline: true },
+  ],
+  applications: [
+    { key: "artists_eyebrow", label: "Artists page — eyebrow" },
+    { key: "artists_title", label: "Artists page — title" },
+    { key: "artists_subtitle", label: "Artists page — subtitle", multiline: true },
+    { key: "artists_card1_title", label: "Artists card 1 — title" },
+    { key: "artists_card1_body", label: "Artists card 1 — body", multiline: true },
+    { key: "artists_card2_title", label: "Artists card 2 — title (e.g. dates)" },
+    { key: "artists_card2_body", label: "Artists card 2 — body", multiline: true },
+    { key: "artists_card3_title", label: "Artists card 3 — title" },
+    { key: "artists_card3_body", label: "Artists card 3 — body", multiline: true },
+    { key: "volunteers_eyebrow", label: "Volunteers page — eyebrow" },
+    { key: "volunteers_title", label: "Volunteers page — title" },
+    { key: "volunteers_subtitle", label: "Volunteers page — subtitle", multiline: true },
   ],
   home_extra: [
     { key: "home_pillars_eyebrow", label: "Pillars eyebrow" },
@@ -894,6 +908,7 @@ export default function AdminPage() {
     { id: "home_extra", label: "Home page", icon: Globe, group: "Site content" },
     { id: "about", label: "About", icon: Star, group: "Site content" },
     { id: "entertainment", label: "Entertainment", icon: Mic2, group: "Site content" },
+    { id: "applications", label: "Artists & Volunteers", icon: HandHeart, group: "Site content" },
     { id: "team", label: "Board", icon: UserCircle, group: "People" },
     { id: "sponsors_list", label: "Sponsors", icon: Star, group: "People" },
     { id: "merch", label: "Merch", icon: ShoppingBag, group: "Store" },
@@ -931,7 +946,7 @@ export default function AdminPage() {
 
         {/* Main content */}
         <main style={{ flex: 1, minWidth: 0 }}>
-          {(tab === "settings" || tab === "header" || tab === "footer" || tab === "about" || tab === "entertainment" || tab === "home_extra") && <SettingsEditor tab={tab} />}
+          {(tab === "settings" || tab === "header" || tab === "footer" || tab === "about" || tab === "entertainment" || tab === "applications" || tab === "home_extra") && <SettingsEditor tab={tab} />}
           {tab === "merch" && <MerchManager />}
           {tab === "media" && <MediaManager />}
           {tab === "schedule" && <ScheduleManager />}

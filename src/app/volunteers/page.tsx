@@ -7,6 +7,7 @@ import { useAuth } from "@/context/auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
+import { useSiteSettings } from "@/lib/site-content";
 
 const inp: React.CSSProperties = { width: "100%", padding: "0.5rem 0.875rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "var(--input)", fontSize: "0.9rem", fontFamily: "inherit", outline: "none" };
 
@@ -16,6 +17,7 @@ const DAYS = [{ value: "sat-jul-11", label: "Saturday · July 11" }, { value: "s
 export default function VolunteersPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const s = useSiteSettings();
   const [loading, setLoading] = useState(false);
   const [roles, setRoles] = useState<Set<string>>(new Set());
   const [days, setDays] = useState<Set<string>>(new Set());
@@ -45,7 +47,7 @@ export default function VolunteersPage() {
 
   return (
     <>
-      <PageHeader eyebrow="Crew up" title="Volunteer with NUFF" subtitle="Help us run the most welcoming festival in the region. Pick your roles, pick your days." />
+      <PageHeader eyebrow={s.volunteers_eyebrow || "Crew up"} title={s.volunteers_title || "Volunteer with NUFF"} subtitle={s.volunteers_subtitle || "Help us run the most welcoming festival in the region. Pick your roles, pick your days."} />
       <section className="container-page" style={{ paddingTop: "3rem", paddingBottom: "4rem", maxWidth: "768px" }}>
         <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: "2rem", borderRadius: "1rem", border: "1px solid var(--border)", background: "var(--card)", padding: "1.5rem 2rem", boxShadow: "var(--shadow-soft)" }}>
           <style>{`@media (min-width: 640px) { .vol-2col { grid-template-columns: 1fr 1fr !important; } }`}</style>

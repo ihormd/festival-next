@@ -8,6 +8,7 @@ import { useAuth } from "@/context/auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
+import { useSiteSettings } from "@/lib/site-content";
 
 const inp: React.CSSProperties = { width: "100%", padding: "0.5rem 0.875rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "var(--input)", fontSize: "0.9rem", fontFamily: "inherit", outline: "none" };
 const sel: React.CSSProperties = { ...inp, cursor: "pointer" };
@@ -17,6 +18,7 @@ const PERFORMANCE_TYPES = ["Solo musician","Band / ensemble","Folk dance group",
 export default function ArtistsPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const s = useSiteSettings();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ stage_name: "", bio: "", performance_type: "", equipment: "", social_links: "", media_link: "", contact_email: user?.email ?? "", contact_phone: "", set_length_minutes: 30, stage_preference: "main" });
 
@@ -41,15 +43,15 @@ export default function ArtistsPage() {
 
   return (
     <>
-      <PageHeader eyebrow="Perform at NUFF" title="Take the NUFF stage" subtitle="One main stage, two days, a packed crowd of families and culture lovers. We program traditional Ukrainian acts alongside contemporary voices." />
+      <PageHeader eyebrow={s.artists_eyebrow || "Perform at NUFF"} title={s.artists_title || "Take the NUFF stage"} subtitle={s.artists_subtitle || "One main stage, two days, a packed crowd of families and culture lovers. We program traditional Ukrainian acts alongside contemporary voices."} />
 
       <section className="container-page" style={{ paddingTop: "3rem", paddingBottom: "2rem" }}>
         <style>{`@media (min-width: 1024px) { .artist-cards { grid-template-columns: repeat(3,1fr) !important; } }`}</style>
         <div className="artist-cards" style={{ display: "grid", gap: "1.5rem" }}>
           {[
-            { icon: Mic2, title: "Main stage", body: "Our single main stage — full PA, monitors, backline, lighting rig. Headliner, feature, and emerging slots throughout the weekend." },
-            { icon: Calendar, title: "July 11–12, 2026", body: "Two-day festival at Fireman's Park, Niagara Falls. Set lengths from 20 to 60 minutes." },
-            { icon: Users, title: "What you get", body: "Hospitality, parking, vendor passes for your crew, and a connected Niagara audience." },
+            { icon: Mic2, title: s.artists_card1_title || "Main stage", body: s.artists_card1_body || "Our single main stage — full PA, monitors, backline, lighting rig. Headliner, feature, and emerging slots throughout the weekend." },
+            { icon: Calendar, title: s.artists_card2_title || "July 11–12, 2026", body: s.artists_card2_body || "Two-day festival at Fireman's Park, Niagara Falls. Set lengths from 20 to 60 minutes." },
+            { icon: Users, title: s.artists_card3_title || "What you get", body: s.artists_card3_body || "Hospitality, parking, vendor passes for your crew, and a connected Niagara audience." },
           ].map(s => (
             <div key={s.title} style={{ borderRadius: "1rem", border: "1px solid var(--border)", background: "var(--card)", padding: "1.5rem" }}>
               <s.icon size={24} style={{ color: "var(--primary)", marginBottom: "0.75rem" }} />

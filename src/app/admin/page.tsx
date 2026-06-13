@@ -7,7 +7,7 @@ import { Save, Users, Store, Mic2, HandHeart, MessageSquare, Settings, Layout, A
 import { MediaManager } from "./MediaManager";
 import { toast } from "sonner";
 
-type Tab = "settings" | "header" | "footer" | "about" | "entertainment" | "applications" | "home_extra" | "vendors_tab" | "artists_tab" | "volunteers_tab" | "messages" | "merch" | "team" | "sponsors_list" | "media" | "schedule" | "vendor_spots";
+type Tab = "settings" | "header" | "footer" | "about" | "entertainment" | "applications" | "home_extra" | "vendors_tab" | "artists_tab" | "volunteers_tab" | "messages" | "merch" | "team" | "sponsors_list" | "media" | "schedule" | "vendor_spots" | "users";
 
 const inp: React.CSSProperties = { width: "100%", padding: "0.5rem 0.875rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "var(--input)", fontSize: "0.875rem", fontFamily: "inherit", outline: "none" };
 
@@ -121,7 +121,7 @@ const FIELDS: Record<Tab, { key: string; label: string; multiline?: boolean }[]>
     { key: "home_stat_3_value", label: "Stat 3 value" }, { key: "home_stat_3_label", label: "Stat 3 label" },
     { key: "home_stat_4_value", label: "Stat 4 value" }, { key: "home_stat_4_label", label: "Stat 4 label" },
   ],
-  vendors_tab: [], artists_tab: [], volunteers_tab: [], messages: [], merch: [], team: [], sponsors_list: [], media: [], schedule: [], vendor_spots: [],
+  vendors_tab: [], artists_tab: [], volunteers_tab: [], messages: [], merch: [], team: [], sponsors_list: [], media: [], schedule: [], vendor_spots: [], users: [],
 };
 
 function SettingsEditor({ tab }: { tab: Tab }) {
@@ -919,6 +919,7 @@ export default function AdminPage() {
     { id: "artists_tab", label: "Artists", icon: Mic2, group: "Applications" },
     { id: "volunteers_tab", label: "Volunteers", icon: HandHeart, group: "Applications" },
     { id: "messages", label: "Messages", icon: MessageSquare, group: "Applications" },
+    { id: "users", label: "Users & Roles", icon: Users, group: "Applications" },
   ];
 
   const groups = [...new Set(tabs.map(t => t.group))];
@@ -957,7 +958,158 @@ export default function AdminPage() {
           {tab === "artists_tab" && <><h2 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "1.25rem", marginBottom: "0.5rem" }}>Artist Applications</h2><AppList table="artist_applications" titleField="stage_name" /></>}
           {tab === "volunteers_tab" && <><h2 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "1.25rem", marginBottom: "0.5rem" }}>Volunteer Applications</h2><AppList table="volunteer_applications" titleField="full_name" /></>}
           {tab === "messages" && <><h2 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "1.25rem", marginBottom: "0.5rem" }}>Contact Messages</h2><MessagesList /></>}
+          {tab === "users" && <UsersManager />}
         </main>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────
+// Users & Roles Manager (appended)
+// ─────────────────────────────────────────
+function UsersManager() {
+  const [users, setUsers] = useState<any[]>([]);
+  const [roles, setRoles] = useState<Record<string, string[]>>({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState<string | null>(null);
+
+  const ROLES = ["admin", "moderator", "viewer"];
+  const ROLE_DESC: Record<string, string> = {
+    admin: "Full access — all admin tabs, edit content, manage users",
+    moderator: "View and manage applications, messages, schedule",
+    viewer: "Read-only access to applications and messages",
+  };
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      // Get all user_roles
+      const { data: roleData } = await supabase.from("user_roles").select("user_id, role");
+      const map: Record<string, string[]> = {};
+      (roleData ?? []).forEach((r: any) => {
+        if (!map[r.user_id]) map[r.user_id] = [];
+        map[r.user_id].push(r.role);
+      });
+      setRoles(map);
+      setLoading(false);
+    };
+    load();
+  }, []);
+
+  const grant = async (userId: string, role: string) => {
+    setSaving(userId);
+    await supabase.from("user_roles").upsert({ user_id: userId, role }, { onConflict: "user_id,role" });
+    setRoles(prev => ({ ...prev, [userId]: [...(prev[userId] ?? []).filter(r => r !== role), role] }));
+    setSaving(null);
+    toast.success(`Role "${role}" granted`);
+  };
+
+  const revoke = async (userId: string, role: string) => {
+    setSaving(userId);
+    await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", role);
+    setRoles(prev => ({ ...prev, [userId]: (prev[userId] ?? []).filter(r => r !== role) }));
+    setSaving(null);
+    toast.success(`Role "${role}" revoked`);
+  };
+
+  // Get all unique user IDs from roles
+  const userIds = Object.keys(roles);
+
+  return (
+    <div>
+      <h2 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "1.25rem", marginBottom: "0.5rem" }}>Users & Roles</h2>
+      <p style={{ fontSize: "0.8rem", color: "var(--muted-foreground)", marginBottom: "1.5rem" }}>
+        To grant someone access, they must first create an account on the site. Then paste their User ID below.
+      </p>
+
+      {/* Role descriptions */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "2rem", padding: "1rem", borderRadius: "0.75rem", background: "var(--cream)", border: "1px solid var(--border)" }}>
+        {ROLES.map(r => (
+          <div key={r} style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start", fontSize: "0.875rem" }}>
+            <span style={{ fontWeight: 700, minWidth: 90, textTransform: "capitalize", color: r === "admin" ? "var(--primary)" : "var(--foreground)" }}>{r}</span>
+            <span style={{ color: "var(--muted-foreground)" }}>{ROLE_DESC[r]}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Add new user form */}
+      <AddUserRoleForm onAdded={(userId, role) => {
+        setRoles(prev => ({ ...prev, [userId]: [...(prev[userId] ?? []).filter(r => r !== role), role] }));
+      }} ROLES={ROLES} />
+
+      {/* Existing roles */}
+      {loading ? <p style={{ color: "var(--muted-foreground)", fontSize: "0.875rem", marginTop: "1.5rem" }}>Loading…</p> : (
+        <div style={{ marginTop: "2rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          <h3 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 600, fontSize: "1rem", marginBottom: "0.25rem" }}>Current access</h3>
+          {userIds.length === 0 && <p style={{ fontSize: "0.875rem", color: "var(--muted-foreground)" }}>No roles assigned yet.</p>}
+          {userIds.map(uid => (
+            <div key={uid} style={{ padding: "1rem 1.25rem", borderRadius: "0.75rem", border: "1px solid var(--border)", background: "var(--card)" }}>
+              <div style={{ fontSize: "0.7rem", fontFamily: "monospace", color: "var(--muted-foreground)", marginBottom: "0.5rem", wordBreak: "break-all" }}>User: {uid}</div>
+              <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap" }}>
+                {ROLES.map(role => {
+                  const has = (roles[uid] ?? []).includes(role);
+                  return (
+                    <button key={role} disabled={saving === uid}
+                      onClick={() => has ? revoke(uid, role) : grant(uid, role)}
+                      style={{ padding: "0.25rem 0.75rem", borderRadius: "9999px", fontSize: "0.75rem", fontWeight: 600, border: "none", cursor: "pointer", textTransform: "capitalize", transition: "all 0.15s", background: has ? "var(--primary)" : "var(--muted)", color: has ? "white" : "var(--muted-foreground)" }}>
+                      {has ? "✓ " : ""}{role}
+                    </button>
+                  );
+                })}
+                <button onClick={() => {
+                  if (!confirm(`Remove all roles for this user?`)) return;
+                  (roles[uid] ?? []).forEach(r => revoke(uid, r));
+                }}
+                  style={{ padding: "0.25rem 0.75rem", borderRadius: "9999px", fontSize: "0.75rem", fontWeight: 600, border: "1px solid var(--border)", background: "none", color: "var(--destructive)", cursor: "pointer", marginLeft: "auto" }}>
+                  Remove all
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AddUserRoleForm({ onAdded, ROLES }: { onAdded: (uid: string, role: string) => void; ROLES: string[] }) {
+  const [userId, setUserId] = useState("");
+  const [role, setRole] = useState("viewer");
+  const [saving, setSaving] = useState(false);
+  const inp2: React.CSSProperties = { width: "100%", padding: "0.5rem 0.875rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "var(--input)", fontSize: "0.875rem", fontFamily: "inherit", outline: "none" };
+
+  const save = async () => {
+    if (!userId.trim()) { toast.error("Paste the User ID"); return; }
+    setSaving(true);
+    const { error } = await supabase.from("user_roles").upsert({ user_id: userId.trim(), role }, { onConflict: "user_id,role" });
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Access granted!");
+    onAdded(userId.trim(), role);
+    setUserId("");
+  };
+
+  return (
+    <div style={{ padding: "1.25rem", borderRadius: "0.875rem", border: "2px solid var(--primary)", background: "oklch(0.42 0.19 255 / 0.04)", maxWidth: 560 }}>
+      <h3 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "1rem", marginBottom: "1rem" }}>Grant access to a user</h3>
+      <p style={{ fontSize: "0.75rem", color: "var(--muted-foreground)", marginBottom: "0.875rem", lineHeight: 1.6 }}>
+        Find the User ID in <strong>Supabase → Authentication → Users</strong> — copy the UUID from the user row.
+      </p>
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+        <div>
+          <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.3rem" }}>User ID (UUID)</label>
+          <input value={userId} onChange={e => setUserId(e.target.value)} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" style={inp2} />
+        </div>
+        <div>
+          <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.3rem" }}>Role</label>
+          <select value={role} onChange={e => setRole(e.target.value)} style={inp2}>
+            {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+          </select>
+        </div>
+        <button onClick={save} disabled={saving} style={{ alignSelf: "flex-start", padding: "0.5rem 1.5rem", borderRadius: "0.5rem", background: "var(--primary)", color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontFamily: "Montserrat, sans-serif", fontSize: "0.875rem", opacity: saving ? 0.7 : 1 }}>
+          {saving ? "Granting…" : "Grant access"}
+        </button>
       </div>
     </div>
   );

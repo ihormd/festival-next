@@ -890,50 +890,50 @@ function VendorSpotEditor() {
 // Main Admin Page
 // ─────────────────────────────────────────
 export default function AdminPage() {
-  const { isAdmin, isModerator, isViewer, loading, adminLoading } = useAuth();
+  const { roles, loading, adminLoading } = useAuth();
   const [tab, setTab] = useState<Tab>("settings");
+  const hasPerm = (perm: string) => roles.includes(perm) || roles.includes("admin");
+  const hasAnyPerm = (...perms: string[]) => perms.some(p => hasPerm(p));
+  const canAccess = roles.length > 0;
 
   useEffect(() => {
-    // Default tab based on role
-    if (!isAdmin && isModerator) setTab("vendors_tab");
-    else if (!isAdmin && !isModerator && isViewer) setTab("vendors_tab");
-  }, [isAdmin, isModerator, isViewer]);
+    if (roles.length > 0 && !roles.includes("admin")) {
+      if (hasAnyPerm("view_vendors", "manage_vendors")) setTab("vendors_tab");
+    }
+  }, [roles]);
 
   if (loading || adminLoading) return <div className="container-page" style={{ paddingTop: "4rem" }}>Loading…</div>;
-  if (!isAdmin && !isModerator && !isViewer) return (
+  if (!canAccess) return (
     <div className="container-page" style={{ paddingTop: "4rem" }}>
       <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "1.5rem", fontWeight: 700 }}>Access required</h1>
       <p style={{ color: "var(--muted-foreground)", marginTop: "0.5rem" }}>Contact the NUFF admin to get access.</p>
     </div>
   );
 
-  const allTabs: { id: Tab; label: string; icon: any; group: string; minRole: "admin" | "moderator" | "viewer" }[] = [
-    { id: "settings", label: "General", icon: Settings, group: "Site content", minRole: "admin" },
-    { id: "header", label: "Header", icon: Layout, group: "Site content", minRole: "admin" },
-    { id: "footer", label: "Footer", icon: AlignLeft, group: "Site content", minRole: "admin" },
-    { id: "home_extra", label: "Home page", icon: Globe, group: "Site content", minRole: "admin" },
-    { id: "about", label: "About", icon: Star, group: "Site content", minRole: "admin" },
-    { id: "entertainment", label: "Entertainment", icon: Mic2, group: "Site content", minRole: "admin" },
-    { id: "applications", label: "Artists & Volunteers", icon: HandHeart, group: "Site content", minRole: "admin" },
-    { id: "team", label: "Board", icon: UserCircle, group: "People", minRole: "admin" },
-    { id: "sponsors_list", label: "Sponsors", icon: Star, group: "People", minRole: "admin" },
-    { id: "merch", label: "Merch", icon: ShoppingBag, group: "Store", minRole: "admin" },
-    { id: "media", label: "Photos & Media", icon: ImageIcon, group: "Store", minRole: "admin" },
-    { id: "schedule", label: "Schedule", icon: Calendar, group: "Festival", minRole: "admin" },
-    { id: "vendor_spots", label: "Vendor Spots", icon: MapPin, group: "Festival", minRole: "admin" },
-    { id: "vendors_tab", label: "Vendors", icon: Store, group: "Applications", minRole: "viewer" },
-    { id: "artists_tab", label: "Artists", icon: Mic2, group: "Applications", minRole: "viewer" },
-    { id: "volunteers_tab", label: "Volunteers", icon: HandHeart, group: "Applications", minRole: "viewer" },
-    { id: "messages", label: "Messages", icon: MessageSquare, group: "Applications", minRole: "viewer" },
-    { id: "users", label: "Users & Roles", icon: Users, group: "Applications", minRole: "admin" },
+  const isAdmin = roles.includes("admin");
+
+  const allTabs: { id: Tab; label: string; icon: any; group: string; show: boolean }[] = [
+    { id: "settings", label: "General", icon: Settings, group: "Site content", show: isAdmin || hasPerm("edit_general") },
+    { id: "header", label: "Header", icon: Layout, group: "Site content", show: isAdmin || hasPerm("edit_header_footer") },
+    { id: "footer", label: "Footer", icon: AlignLeft, group: "Site content", show: isAdmin || hasPerm("edit_header_footer") },
+    { id: "home_extra", label: "Home page", icon: Globe, group: "Site content", show: isAdmin || hasPerm("edit_home") },
+    { id: "about", label: "About", icon: Star, group: "Site content", show: isAdmin || hasPerm("edit_about") },
+    { id: "entertainment", label: "Entertainment", icon: Mic2, group: "Site content", show: isAdmin || hasPerm("edit_entertainment") },
+    { id: "applications", label: "Artists & Volunteers", icon: HandHeart, group: "Site content", show: isAdmin || hasPerm("edit_applications_text") },
+    { id: "team", label: "Board", icon: UserCircle, group: "People", show: isAdmin || hasPerm("edit_team") },
+    { id: "sponsors_list", label: "Sponsors", icon: Star, group: "People", show: isAdmin || hasPerm("edit_sponsors") },
+    { id: "merch", label: "Merch", icon: ShoppingBag, group: "Store", show: isAdmin || hasPerm("edit_merch") },
+    { id: "media", label: "Photos & Media", icon: ImageIcon, group: "Store", show: isAdmin || hasPerm("edit_photos") },
+    { id: "schedule", label: "Schedule", icon: Calendar, group: "Festival", show: isAdmin || hasPerm("edit_schedule") },
+    { id: "vendor_spots", label: "Vendor Spots", icon: MapPin, group: "Festival", show: isAdmin || hasPerm("edit_vendor_spots") },
+    { id: "vendors_tab", label: "Vendors", icon: Store, group: "Applications", show: isAdmin || hasAnyPerm("view_vendors", "manage_vendors") },
+    { id: "artists_tab", label: "Artists", icon: Mic2, group: "Applications", show: isAdmin || hasAnyPerm("view_artists", "manage_artists") },
+    { id: "volunteers_tab", label: "Volunteers", icon: HandHeart, group: "Applications", show: isAdmin || hasAnyPerm("view_volunteers", "manage_volunteers") },
+    { id: "messages", label: "Messages", icon: MessageSquare, group: "Applications", show: isAdmin || hasPerm("view_messages") },
+    { id: "users", label: "Users & Permissions", icon: Users, group: "Applications", show: isAdmin },
   ];
 
-  // Filter tabs by current user's role
-  const tabs = allTabs.filter(t => {
-    if (t.minRole === "admin") return isAdmin;
-    if (t.minRole === "moderator") return isModerator;
-    return isViewer; // viewer
-  });
+  const tabs = allTabs.filter(t => t.show);
 
   const groups = [...new Set(tabs.map(t => t.group))];
 
@@ -981,149 +981,175 @@ export default function AdminPage() {
 // ─────────────────────────────────────────
 // Users & Roles Manager (appended)
 // ─────────────────────────────────────────
+// ─── Permission definitions ───────────────────────────────────────────────
+const PERMISSION_GROUPS = [
+  { group: "Content", items: [
+    { key: "edit_general", label: "General settings (dates, contacts, SEO)" },
+    { key: "edit_header_footer", label: "Header & Footer text" },
+    { key: "edit_home", label: "Home page content" },
+    { key: "edit_about", label: "About page content" },
+    { key: "edit_entertainment", label: "Entertainment page & lineup" },
+    { key: "edit_applications_text", label: "Artists & Volunteers page text" },
+  ]},
+  { group: "Media", items: [
+    { key: "edit_photos", label: "Photos & Media (upload/delete images)" },
+    { key: "edit_team", label: "Board of Directors (add/edit/remove members)" },
+    { key: "edit_sponsors", label: "Sponsors (add/edit/remove sponsors)" },
+  ]},
+  { group: "Festival", items: [
+    { key: "edit_schedule", label: "Festival schedule" },
+    { key: "edit_vendor_spots", label: "Vendor spots (map, pricing)" },
+    { key: "edit_merch", label: "Merch store (add/edit products)" },
+  ]},
+  { group: "Applications", items: [
+    { key: "view_vendors", label: "View vendor applications" },
+    { key: "manage_vendors", label: "Approve/reject vendor applications" },
+    { key: "view_artists", label: "View artist applications" },
+    { key: "manage_artists", label: "Approve/reject artist applications" },
+    { key: "view_volunteers", label: "View volunteer applications" },
+    { key: "manage_volunteers", label: "Approve/reject volunteer applications" },
+    { key: "view_messages", label: "View contact messages" },
+  ]},
+];
+const ALL_PERMISSIONS = PERMISSION_GROUPS.flatMap(g => g.items.map(i => i.key));
+const PRESETS: Record<string, string[]> = {
+  "Full admin": ALL_PERMISSIONS,
+  "Content editor": ["edit_general","edit_header_footer","edit_home","edit_about","edit_entertainment","edit_applications_text","edit_photos"],
+  "Applications manager": ["view_vendors","manage_vendors","view_artists","manage_artists","view_volunteers","manage_volunteers","view_messages"],
+  "Read-only viewer": ["view_vendors","view_artists","view_volunteers","view_messages"],
+};
+
 function UsersManager() {
-  const [users, setUsers] = useState<any[]>([]);
-  const [roles, setRoles] = useState<Record<string, string[]>>({});
+  const [userPerms, setUserPerms] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState<string | null>(null);
+  const [expandedUser, setExpandedUser] = useState<string | null>(null);
+  const [newUserId, setNewUserId] = useState("");
+  const [addingUser, setAddingUser] = useState(false);
 
-  const ROLES = ["admin", "moderator", "viewer"];
-  const ROLE_DESC: Record<string, string> = {
-    admin: "Full access — all admin tabs, edit content, manage users",
-    moderator: "View and manage applications, messages, schedule",
-    viewer: "Read-only access to applications and messages",
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase.from("user_roles").select("user_id, role");
+    const map: Record<string, string[]> = {};
+    (data ?? []).forEach((r: any) => { if (!map[r.user_id]) map[r.user_id] = []; map[r.user_id].push(r.role); });
+    setUserPerms(map);
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const toggle = async (userId: string, perm: string) => {
+    const current = userPerms[userId] ?? [];
+    const has = current.includes(perm);
+    if (has) {
+      await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", perm);
+      setUserPerms(prev => ({ ...prev, [userId]: current.filter(r => r !== perm) }));
+    } else {
+      await supabase.from("user_roles").upsert({ user_id: userId, role: perm }, { onConflict: "user_id,role" });
+      setUserPerms(prev => ({ ...prev, [userId]: [...current, perm] }));
+    }
   };
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      // Get all user_roles
-      const { data: roleData } = await supabase.from("user_roles").select("user_id, role");
-      const map: Record<string, string[]> = {};
-      (roleData ?? []).forEach((r: any) => {
-        if (!map[r.user_id]) map[r.user_id] = [];
-        map[r.user_id].push(r.role);
-      });
-      setRoles(map);
-      setLoading(false);
-    };
-    load();
-  }, []);
-
-  const grant = async (userId: string, role: string) => {
-    setSaving(userId);
-    await supabase.from("user_roles").upsert({ user_id: userId, role }, { onConflict: "user_id,role" });
-    setRoles(prev => ({ ...prev, [userId]: [...(prev[userId] ?? []).filter(r => r !== role), role] }));
-    setSaving(null);
-    toast.success(`Role "${role}" granted`);
+  const applyPreset = async (userId: string, presetName: string) => {
+    const perms = PRESETS[presetName];
+    await supabase.from("user_roles").delete().eq("user_id", userId);
+    if (perms.length) await supabase.from("user_roles").insert(perms.map(p => ({ user_id: userId, role: p })));
+    setUserPerms(prev => ({ ...prev, [userId]: perms }));
+    toast.success(`Preset "${presetName}" applied`);
   };
 
-  const revoke = async (userId: string, role: string) => {
-    setSaving(userId);
-    await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", role);
-    setRoles(prev => ({ ...prev, [userId]: (prev[userId] ?? []).filter(r => r !== role) }));
-    setSaving(null);
-    toast.success(`Role "${role}" revoked`);
+  const removeUser = async (userId: string) => {
+    if (!confirm("Remove all permissions for this user?")) return;
+    await supabase.from("user_roles").delete().eq("user_id", userId);
+    setUserPerms(prev => { const n = { ...prev }; delete n[userId]; return n; });
+    toast.success("Permissions removed");
   };
 
-  // Get all unique user IDs from roles
-  const userIds = Object.keys(roles);
+  const addUser = async () => {
+    if (!newUserId.trim()) { toast.error("Paste a User ID"); return; }
+    if (userPerms[newUserId.trim()]) { toast.info("User already has permissions"); setExpandedUser(newUserId.trim()); return; }
+    setAddingUser(true);
+    const defaultPerms = PRESETS["Read-only viewer"];
+    await supabase.from("user_roles").insert(defaultPerms.map(p => ({ user_id: newUserId.trim(), role: p })));
+    setUserPerms(prev => ({ ...prev, [newUserId.trim()]: defaultPerms }));
+    setExpandedUser(newUserId.trim());
+    setNewUserId("");
+    setAddingUser(false);
+    toast.success("User added with read-only access — customize below");
+  };
+
+  const userIds = Object.keys(userPerms);
 
   return (
-    <div>
-      <h2 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "1.25rem", marginBottom: "0.5rem" }}>Users & Roles</h2>
-      <p style={{ fontSize: "0.8rem", color: "var(--muted-foreground)", marginBottom: "1.5rem" }}>
-        To grant someone access, they must first create an account on the site. Then paste their User ID below.
-      </p>
-
-      {/* Role descriptions */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "2rem", padding: "1rem", borderRadius: "0.75rem", background: "var(--cream)", border: "1px solid var(--border)" }}>
-        {ROLES.map(r => (
-          <div key={r} style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start", fontSize: "0.875rem" }}>
-            <span style={{ fontWeight: 700, minWidth: 90, textTransform: "capitalize", color: r === "admin" ? "var(--primary)" : "var(--foreground)" }}>{r}</span>
-            <span style={{ color: "var(--muted-foreground)" }}>{ROLE_DESC[r]}</span>
-          </div>
-        ))}
+    <div style={{ maxWidth: 720 }}>
+      <h2 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "1.25rem", marginBottom: "0.375rem" }}>Users & Permissions</h2>
+      <p style={{ fontSize: "0.8rem", color: "var(--muted-foreground)", marginBottom: "2rem" }}>Find User IDs in Supabase → Authentication → Users.</p>
+      <div style={{ padding: "1.25rem", borderRadius: "0.875rem", border: "2px solid var(--primary)", background: "oklch(0.42 0.19 255 / 0.04)", marginBottom: "2rem" }}>
+        <h3 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "0.95rem", marginBottom: "0.75rem" }}>Add a user</h3>
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          <input value={newUserId} onChange={e => setNewUserId(e.target.value)} placeholder="Paste User UUID…" style={{ ...inp, flex: 1, minWidth: 240 }} />
+          <button onClick={addUser} disabled={addingUser} style={{ padding: "0.5rem 1.25rem", borderRadius: "0.5rem", background: "var(--primary)", color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontFamily: "Montserrat, sans-serif", fontSize: "0.875rem", whiteSpace: "nowrap", opacity: addingUser ? 0.7 : 1 }}>
+            {addingUser ? "Adding…" : "Add user"}
+          </button>
+        </div>
       </div>
-
-      {/* Add new user form */}
-      <AddUserRoleForm onAdded={(userId, role) => {
-        setRoles(prev => ({ ...prev, [userId]: [...(prev[userId] ?? []).filter(r => r !== role), role] }));
-      }} ROLES={ROLES} />
-
-      {/* Existing roles */}
-      {loading ? <p style={{ color: "var(--muted-foreground)", fontSize: "0.875rem", marginTop: "1.5rem" }}>Loading…</p> : (
-        <div style={{ marginTop: "2rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-          <h3 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 600, fontSize: "1rem", marginBottom: "0.25rem" }}>Current access</h3>
-          {userIds.length === 0 && <p style={{ fontSize: "0.875rem", color: "var(--muted-foreground)" }}>No roles assigned yet.</p>}
-          {userIds.map(uid => (
-            <div key={uid} style={{ padding: "1rem 1.25rem", borderRadius: "0.75rem", border: "1px solid var(--border)", background: "var(--card)" }}>
-              <div style={{ fontSize: "0.7rem", fontFamily: "monospace", color: "var(--muted-foreground)", marginBottom: "0.5rem", wordBreak: "break-all" }}>User: {uid}</div>
-              <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap" }}>
-                {ROLES.map(role => {
-                  const has = (roles[uid] ?? []).includes(role);
-                  return (
-                    <button key={role} disabled={saving === uid}
-                      onClick={() => has ? revoke(uid, role) : grant(uid, role)}
-                      style={{ padding: "0.25rem 0.75rem", borderRadius: "9999px", fontSize: "0.75rem", fontWeight: 600, border: "none", cursor: "pointer", textTransform: "capitalize", transition: "all 0.15s", background: has ? "var(--primary)" : "var(--muted)", color: has ? "white" : "var(--muted-foreground)" }}>
-                      {has ? "✓ " : ""}{role}
+      {loading ? <p style={{ color: "var(--muted-foreground)", fontSize: "0.875rem" }}>Loading…</p> : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          {userIds.length === 0 && <p style={{ color: "var(--muted-foreground)", fontSize: "0.875rem" }}>No users yet.</p>}
+          {userIds.map(uid => {
+            const perms = userPerms[uid] ?? [];
+            const isExpanded = expandedUser === uid;
+            return (
+              <div key={uid} style={{ borderRadius: "0.875rem", border: `1px solid ${isExpanded ? "var(--primary)" : "var(--border)"}`, background: "var(--card)", overflow: "hidden" }}>
+                <div style={{ padding: "0.875rem 1.25rem", display: "flex", alignItems: "center", gap: "0.75rem", cursor: "pointer" }} onClick={() => setExpandedUser(isExpanded ? null : uid)}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: "0.7rem", fontFamily: "monospace", color: "var(--muted-foreground)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{uid}</div>
+                    <div style={{ fontSize: "0.8rem", marginTop: "0.2rem", fontWeight: 600, color: "var(--foreground)" }}>{perms.length} permission{perms.length !== 1 ? "s" : ""}</div>
+                  </div>
+                  <div style={{ display: "flex", gap: "0.375rem", flexShrink: 0 }}>
+                    <button onClick={e => { e.stopPropagation(); setExpandedUser(isExpanded ? null : uid); }}
+                      style={{ padding: "0.25rem 0.75rem", borderRadius: "0.375rem", border: "1px solid var(--border)", background: isExpanded ? "var(--primary)" : "none", color: isExpanded ? "white" : "var(--foreground)", cursor: "pointer", fontSize: "0.75rem", fontWeight: 600 }}>
+                      {isExpanded ? "Collapse" : "Edit"}
                     </button>
-                  );
-                })}
-                <button onClick={() => {
-                  if (!confirm(`Remove all roles for this user?`)) return;
-                  (roles[uid] ?? []).forEach(r => revoke(uid, r));
-                }}
-                  style={{ padding: "0.25rem 0.75rem", borderRadius: "9999px", fontSize: "0.75rem", fontWeight: 600, border: "1px solid var(--border)", background: "none", color: "var(--destructive)", cursor: "pointer", marginLeft: "auto" }}>
-                  Remove all
-                </button>
+                    <button onClick={e => { e.stopPropagation(); removeUser(uid); }}
+                      style={{ padding: "0.25rem 0.625rem", borderRadius: "0.375rem", border: "1px solid var(--border)", background: "none", color: "var(--destructive)", cursor: "pointer", fontSize: "0.75rem" }}>
+                      Remove
+                    </button>
+                  </div>
+                </div>
+                {isExpanded && (
+                  <div style={{ padding: "0 1.25rem 1.25rem", borderTop: "1px solid var(--border)" }}>
+                    <div style={{ padding: "0.75rem 0", display: "flex", gap: "0.375rem", flexWrap: "wrap", alignItems: "center" }}>
+                      <span style={{ fontSize: "0.72rem", fontWeight: 600, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.08em", marginRight: "0.25rem" }}>Quick presets:</span>
+                      {Object.keys(PRESETS).map(p => (
+                        <button key={p} onClick={() => applyPreset(uid, p)}
+                          style={{ padding: "0.2rem 0.625rem", borderRadius: "9999px", border: "1px solid var(--border)", background: "none", cursor: "pointer", fontSize: "0.72rem", fontWeight: 600, fontFamily: "inherit" }}>
+                          {p}
+                        </button>
+                      ))}
+                    </div>
+                    {PERMISSION_GROUPS.map(g => (
+                      <div key={g.group} style={{ marginBottom: "1rem" }}>
+                        <div style={{ fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--primary)", marginBottom: "0.5rem" }}>{g.group}</div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                          {g.items.map(item => {
+                            const checked = perms.includes(item.key);
+                            return (
+                              <label key={item.key} style={{ display: "flex", alignItems: "center", gap: "0.625rem", cursor: "pointer", padding: "0.25rem 0.5rem", borderRadius: "0.375rem" }}>
+                                <input type="checkbox" checked={checked} onChange={() => toggle(uid, item.key)}
+                                  style={{ width: 16, height: 16, accentColor: "var(--primary)", cursor: "pointer", flexShrink: 0 }} />
+                                <span style={{ fontSize: "0.875rem", color: checked ? "var(--foreground)" : "var(--muted-foreground)" }}>{item.label}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
-    </div>
-  );
-}
-
-function AddUserRoleForm({ onAdded, ROLES }: { onAdded: (uid: string, role: string) => void; ROLES: string[] }) {
-  const [userId, setUserId] = useState("");
-  const [role, setRole] = useState("viewer");
-  const [saving, setSaving] = useState(false);
-  const inp2: React.CSSProperties = { width: "100%", padding: "0.5rem 0.875rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "var(--input)", fontSize: "0.875rem", fontFamily: "inherit", outline: "none" };
-
-  const save = async () => {
-    if (!userId.trim()) { toast.error("Paste the User ID"); return; }
-    setSaving(true);
-    const { error } = await supabase.from("user_roles").upsert({ user_id: userId.trim(), role }, { onConflict: "user_id,role" });
-    setSaving(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Access granted!");
-    onAdded(userId.trim(), role);
-    setUserId("");
-  };
-
-  return (
-    <div style={{ padding: "1.25rem", borderRadius: "0.875rem", border: "2px solid var(--primary)", background: "oklch(0.42 0.19 255 / 0.04)", maxWidth: 560 }}>
-      <h3 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "1rem", marginBottom: "1rem" }}>Grant access to a user</h3>
-      <p style={{ fontSize: "0.75rem", color: "var(--muted-foreground)", marginBottom: "0.875rem", lineHeight: 1.6 }}>
-        Find the User ID in <strong>Supabase → Authentication → Users</strong> — copy the UUID from the user row.
-      </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-        <div>
-          <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.3rem" }}>User ID (UUID)</label>
-          <input value={userId} onChange={e => setUserId(e.target.value)} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" style={inp2} />
-        </div>
-        <div>
-          <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.3rem" }}>Role</label>
-          <select value={role} onChange={e => setRole(e.target.value)} style={inp2}>
-            {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-          </select>
-        </div>
-        <button onClick={save} disabled={saving} style={{ alignSelf: "flex-start", padding: "0.5rem 1.5rem", borderRadius: "0.5rem", background: "var(--primary)", color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontFamily: "Montserrat, sans-serif", fontSize: "0.875rem", opacity: saving ? 0.7 : 1 }}>
-          {saving ? "Granting…" : "Grant access"}
-        </button>
-      </div>
     </div>
   );
 }

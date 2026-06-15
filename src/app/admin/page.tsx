@@ -890,50 +890,43 @@ function VendorSpotEditor() {
 // Main Admin Page
 // ─────────────────────────────────────────
 export default function AdminPage() {
-  const { roles, loading, adminLoading } = useAuth();
+  const { isAdmin, isModerator, roles, loading, adminLoading } = useAuth();
   const [tab, setTab] = useState<Tab>("settings");
-  const hasPerm = (perm: string) => roles.includes(perm) || roles.includes("admin");
-  const hasAnyPerm = (...perms: string[]) => perms.some(p => hasPerm(p));
-  const canAccess = roles.length > 0;
 
   useEffect(() => {
-    if (roles.length > 0 && !roles.includes("admin")) {
-      if (hasAnyPerm("view_vendors", "manage_vendors")) setTab("vendors_tab");
-    }
-  }, [roles]);
+    if (!isAdmin && isModerator) setTab("vendors_tab");
+  }, [isAdmin, isModerator]);
 
   if (loading || adminLoading) return <div className="container-page" style={{ paddingTop: "4rem" }}>Loading…</div>;
-  if (!canAccess) return (
+  if (!isAdmin && !isModerator) return (
     <div className="container-page" style={{ paddingTop: "4rem" }}>
       <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "1.5rem", fontWeight: 700 }}>Access required</h1>
       <p style={{ color: "var(--muted-foreground)", marginTop: "0.5rem" }}>Contact the NUFF admin to get access.</p>
     </div>
   );
 
-  const isAdmin = roles.includes("admin");
-
-  const allTabs: { id: Tab; label: string; icon: any; group: string; show: boolean }[] = [
-    { id: "settings", label: "General", icon: Settings, group: "Site content", show: isAdmin || hasPerm("edit_general") },
-    { id: "header", label: "Header", icon: Layout, group: "Site content", show: isAdmin || hasPerm("edit_header_footer") },
-    { id: "footer", label: "Footer", icon: AlignLeft, group: "Site content", show: isAdmin || hasPerm("edit_header_footer") },
-    { id: "home_extra", label: "Home page", icon: Globe, group: "Site content", show: isAdmin || hasPerm("edit_home") },
-    { id: "about", label: "About", icon: Star, group: "Site content", show: isAdmin || hasPerm("edit_about") },
-    { id: "entertainment", label: "Entertainment", icon: Mic2, group: "Site content", show: isAdmin || hasPerm("edit_entertainment") },
-    { id: "applications", label: "Artists & Volunteers", icon: HandHeart, group: "Site content", show: isAdmin || hasPerm("edit_applications_text") },
-    { id: "team", label: "Board", icon: UserCircle, group: "People", show: isAdmin || hasPerm("edit_team") },
-    { id: "sponsors_list", label: "Sponsors", icon: Star, group: "People", show: isAdmin || hasPerm("edit_sponsors") },
-    { id: "merch", label: "Merch", icon: ShoppingBag, group: "Store", show: isAdmin || hasPerm("edit_merch") },
-    { id: "media", label: "Photos & Media", icon: ImageIcon, group: "Store", show: isAdmin || hasPerm("edit_photos") },
-    { id: "schedule", label: "Schedule", icon: Calendar, group: "Festival", show: isAdmin || hasPerm("edit_schedule") },
-    { id: "vendor_spots", label: "Vendor Spots", icon: MapPin, group: "Festival", show: isAdmin || hasPerm("edit_vendor_spots") },
-    { id: "vendors_tab", label: "Vendors", icon: Store, group: "Applications", show: isAdmin || hasAnyPerm("view_vendors", "manage_vendors") },
-    { id: "artists_tab", label: "Artists", icon: Mic2, group: "Applications", show: isAdmin || hasAnyPerm("view_artists", "manage_artists") },
-    { id: "volunteers_tab", label: "Volunteers", icon: HandHeart, group: "Applications", show: isAdmin || hasAnyPerm("view_volunteers", "manage_volunteers") },
-    { id: "messages", label: "Messages", icon: MessageSquare, group: "Applications", show: isAdmin || hasPerm("view_messages") },
-    { id: "users", label: "Users & Permissions", icon: Users, group: "Applications", show: isAdmin },
+  const allTabs: { id: Tab; label: string; icon: any; group: string; adminOnly: boolean }[] = [
+    { id: "settings", label: "General", icon: Settings, group: "Site content", adminOnly: true },
+    { id: "header", label: "Header", icon: Layout, group: "Site content", adminOnly: true },
+    { id: "footer", label: "Footer", icon: AlignLeft, group: "Site content", adminOnly: true },
+    { id: "home_extra", label: "Home page", icon: Globe, group: "Site content", adminOnly: true },
+    { id: "about", label: "About", icon: Star, group: "Site content", adminOnly: true },
+    { id: "entertainment", label: "Entertainment", icon: Mic2, group: "Site content", adminOnly: true },
+    { id: "applications", label: "Artists & Volunteers", icon: HandHeart, group: "Site content", adminOnly: true },
+    { id: "team", label: "Board", icon: UserCircle, group: "People", adminOnly: true },
+    { id: "sponsors_list", label: "Sponsors", icon: Star, group: "People", adminOnly: true },
+    { id: "merch", label: "Merch", icon: ShoppingBag, group: "Store", adminOnly: true },
+    { id: "media", label: "Photos & Media", icon: ImageIcon, group: "Store", adminOnly: true },
+    { id: "schedule", label: "Schedule", icon: Calendar, group: "Festival", adminOnly: true },
+    { id: "vendor_spots", label: "Vendor Spots", icon: MapPin, group: "Festival", adminOnly: true },
+    { id: "vendors_tab", label: "Vendors", icon: Store, group: "Applications", adminOnly: false },
+    { id: "artists_tab", label: "Artists", icon: Mic2, group: "Applications", adminOnly: false },
+    { id: "volunteers_tab", label: "Volunteers", icon: HandHeart, group: "Applications", adminOnly: false },
+    { id: "messages", label: "Messages", icon: MessageSquare, group: "Applications", adminOnly: false },
+    { id: "users", label: "Users & Roles", icon: Users, group: "Applications", adminOnly: true },
   ];
 
-  const tabs = allTabs.filter(t => t.show);
+  const tabs = allTabs.filter(t => isAdmin || !t.adminOnly);
 
   const groups = [...new Set(tabs.map(t => t.group))];
 

@@ -10,7 +10,6 @@ interface AuthCtx {
   adminLoading: boolean;
   isAdmin: boolean;
   isModerator: boolean;
-  isViewer: boolean;
   roles: string[];
   signOut: () => Promise<void>;
 }
@@ -42,10 +41,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isAdmin = roles.includes("admin");
   const isModerator = roles.includes("moderator") || isAdmin;
-  const isViewer = roles.includes("viewer") || isModerator;
 
   return (
-    <Ctx.Provider value={{ session, user: session?.user ?? null, loading, adminLoading, isAdmin, isModerator, isViewer, roles, signOut: async () => { await supabase.auth.signOut(); } }}>
+    <Ctx.Provider value={{ session, user: session?.user ?? null, loading, adminLoading, isAdmin, isModerator, roles, signOut: async () => { await supabase.auth.signOut(); } }}>
       {children}
     </Ctx.Provider>
   );

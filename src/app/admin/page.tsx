@@ -975,169 +975,126 @@ export default function AdminPage() {
 // Users & Roles Manager (appended)
 // ─────────────────────────────────────────
 // ─── Permission definitions ───────────────────────────────────────────────
-const PERMISSION_GROUPS = [
-  { group: "Content", items: [
-    { key: "edit_general", label: "General settings (dates, contacts, SEO)" },
-    { key: "edit_header_footer", label: "Header & Footer text" },
-    { key: "edit_home", label: "Home page content" },
-    { key: "edit_about", label: "About page content" },
-    { key: "edit_entertainment", label: "Entertainment page & lineup" },
-    { key: "edit_applications_text", label: "Artists & Volunteers page text" },
-  ]},
-  { group: "Media", items: [
-    { key: "edit_photos", label: "Photos & Media (upload/delete images)" },
-    { key: "edit_team", label: "Board of Directors (add/edit/remove members)" },
-    { key: "edit_sponsors", label: "Sponsors (add/edit/remove sponsors)" },
-  ]},
-  { group: "Festival", items: [
-    { key: "edit_schedule", label: "Festival schedule" },
-    { key: "edit_vendor_spots", label: "Vendor spots (map, pricing)" },
-    { key: "edit_merch", label: "Merch store (add/edit products)" },
-  ]},
-  { group: "Applications", items: [
-    { key: "view_vendors", label: "View vendor applications" },
-    { key: "manage_vendors", label: "Approve/reject vendor applications" },
-    { key: "view_artists", label: "View artist applications" },
-    { key: "manage_artists", label: "Approve/reject artist applications" },
-    { key: "view_volunteers", label: "View volunteer applications" },
-    { key: "manage_volunteers", label: "Approve/reject volunteer applications" },
-    { key: "view_messages", label: "View contact messages" },
-  ]},
+// ─────────────────────────────────────────
+// Users & Roles Manager
+// ─────────────────────────────────────────
+const ROLES_LIST = [
+  { id: "admin", label: "Admin", desc: "Full access — all admin sections, edit content, manage users" },
+  { id: "moderator", label: "Moderator", desc: "View and manage applications, messages only" },
 ];
-const ALL_PERMISSIONS = PERMISSION_GROUPS.flatMap(g => g.items.map(i => i.key));
-const PRESETS: Record<string, string[]> = {
-  "Full admin": ALL_PERMISSIONS,
-  "Content editor": ["edit_general","edit_header_footer","edit_home","edit_about","edit_entertainment","edit_applications_text","edit_photos"],
-  "Applications manager": ["view_vendors","manage_vendors","view_artists","manage_artists","view_volunteers","manage_volunteers","view_messages"],
-  "Read-only viewer": ["view_vendors","view_artists","view_volunteers","view_messages"],
-};
 
 function UsersManager() {
-  const [userPerms, setUserPerms] = useState<Record<string, string[]>>({});
+  const [userRoles, setUserRoles] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
-  const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [newUserId, setNewUserId] = useState("");
-  const [addingUser, setAddingUser] = useState(false);
+  const [newRole, setNewRole] = useState("moderator");
+  const [adding, setAdding] = useState(false);
 
   const load = async () => {
     setLoading(true);
     const { data } = await supabase.from("user_roles").select("user_id, role");
     const map: Record<string, string[]> = {};
-    (data ?? []).forEach((r: any) => { if (!map[r.user_id]) map[r.user_id] = []; map[r.user_id].push(r.role); });
-    setUserPerms(map);
+    (data ?? []).forEach((r: any) => {
+      if (!map[r.user_id]) map[r.user_id] = [];
+      map[r.user_id].push(r.role);
+    });
+    setUserRoles(map);
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
 
-  const toggle = async (userId: string, perm: string) => {
-    const current = userPerms[userId] ?? [];
-    const has = current.includes(perm);
-    if (has) {
-      await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", perm);
-      setUserPerms(prev => ({ ...prev, [userId]: current.filter(r => r !== perm) }));
-    } else {
-      await supabase.from("user_roles").upsert({ user_id: userId, role: perm }, { onConflict: "user_id,role" });
-      setUserPerms(prev => ({ ...prev, [userId]: [...current, perm] }));
-    }
+  const grant = async (userId: string, role: string) => {
+    await supabase.from("user_roles").upsert({ user_id: userId, role }, { onConflict: "user_id,role" });
+    setUserRoles(prev => ({ ...prev, [userId]: [...(prev[userId] ?? []).filter(r => r !== role), role] }));
+    toast.success(`Role "${role}" granted`);
   };
 
-  const applyPreset = async (userId: string, presetName: string) => {
-    const perms = PRESETS[presetName];
-    await supabase.from("user_roles").delete().eq("user_id", userId);
-    if (perms.length) await supabase.from("user_roles").insert(perms.map(p => ({ user_id: userId, role: p })));
-    setUserPerms(prev => ({ ...prev, [userId]: perms }));
-    toast.success(`Preset "${presetName}" applied`);
+  const revoke = async (userId: string, role: string) => {
+    await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", role);
+    setUserRoles(prev => ({ ...prev, [userId]: (prev[userId] ?? []).filter(r => r !== role) }));
+    toast.success(`Role "${role}" revoked`);
   };
 
   const removeUser = async (userId: string) => {
-    if (!confirm("Remove all permissions for this user?")) return;
+    if (!confirm("Remove all roles for this user?")) return;
     await supabase.from("user_roles").delete().eq("user_id", userId);
-    setUserPerms(prev => { const n = { ...prev }; delete n[userId]; return n; });
-    toast.success("Permissions removed");
+    setUserRoles(prev => { const n = { ...prev }; delete n[userId]; return n; });
+    toast.success("User removed");
   };
 
   const addUser = async () => {
     if (!newUserId.trim()) { toast.error("Paste a User ID"); return; }
-    if (userPerms[newUserId.trim()]) { toast.info("User already has permissions"); setExpandedUser(newUserId.trim()); return; }
-    setAddingUser(true);
-    const defaultPerms = PRESETS["Read-only viewer"];
-    await supabase.from("user_roles").insert(defaultPerms.map(p => ({ user_id: newUserId.trim(), role: p })));
-    setUserPerms(prev => ({ ...prev, [newUserId.trim()]: defaultPerms }));
-    setExpandedUser(newUserId.trim());
+    setAdding(true);
+    await supabase.from("user_roles").upsert({ user_id: newUserId.trim(), role: newRole }, { onConflict: "user_id,role" });
+    setUserRoles(prev => ({ ...prev, [newUserId.trim()]: [...(prev[newUserId.trim()] ?? []).filter(r => r !== newRole), newRole] }));
+    toast.success(`User added as ${newRole}`);
     setNewUserId("");
-    setAddingUser(false);
-    toast.success("User added with read-only access — customize below");
+    setAdding(false);
   };
 
-  const userIds = Object.keys(userPerms);
+  const userIds = Object.keys(userRoles);
 
   return (
-    <div style={{ maxWidth: 720 }}>
-      <h2 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "1.25rem", marginBottom: "0.375rem" }}>Users & Permissions</h2>
-      <p style={{ fontSize: "0.8rem", color: "var(--muted-foreground)", marginBottom: "2rem" }}>Find User IDs in Supabase → Authentication → Users.</p>
+    <div style={{ maxWidth: 640 }}>
+      <h2 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "1.25rem", marginBottom: "0.375rem" }}>Users & Roles</h2>
+      <p style={{ fontSize: "0.8rem", color: "var(--muted-foreground)", marginBottom: "1.5rem" }}>
+        Find User IDs in <strong>Supabase → Authentication → Users</strong>.
+      </p>
+
+      {/* Role descriptions */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1.5rem", padding: "1rem", borderRadius: "0.75rem", background: "var(--cream)", border: "1px solid var(--border)" }}>
+        {ROLES_LIST.map(r => (
+          <div key={r.id} style={{ display: "flex", gap: "0.75rem", fontSize: "0.875rem" }}>
+            <span style={{ fontWeight: 700, minWidth: 90, color: r.id === "admin" ? "var(--primary)" : "var(--foreground)" }}>{r.label}</span>
+            <span style={{ color: "var(--muted-foreground)" }}>{r.desc}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Add user form */}
       <div style={{ padding: "1.25rem", borderRadius: "0.875rem", border: "2px solid var(--primary)", background: "oklch(0.42 0.19 255 / 0.04)", marginBottom: "2rem" }}>
         <h3 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "0.95rem", marginBottom: "0.75rem" }}>Add a user</h3>
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-          <input value={newUserId} onChange={e => setNewUserId(e.target.value)} placeholder="Paste User UUID…" style={{ ...inp, flex: 1, minWidth: 240 }} />
-          <button onClick={addUser} disabled={addingUser} style={{ padding: "0.5rem 1.25rem", borderRadius: "0.5rem", background: "var(--primary)", color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontFamily: "Montserrat, sans-serif", fontSize: "0.875rem", whiteSpace: "nowrap", opacity: addingUser ? 0.7 : 1 }}>
-            {addingUser ? "Adding…" : "Add user"}
+          <input value={newUserId} onChange={e => setNewUserId(e.target.value)} placeholder="Paste User UUID…"
+            style={{ ...inp, flex: 1, minWidth: 220 }} />
+          <select value={newRole} onChange={e => setNewRole(e.target.value)} style={{ ...inp, width: "auto" }}>
+            {ROLES_LIST.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
+          </select>
+          <button onClick={addUser} disabled={adding}
+            style={{ padding: "0.5rem 1.25rem", borderRadius: "0.5rem", background: "var(--primary)", color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontFamily: "Montserrat, sans-serif", fontSize: "0.875rem", opacity: adding ? 0.7 : 1 }}>
+            {adding ? "Adding…" : "Add"}
           </button>
         </div>
       </div>
+
+      {/* Users list */}
       {loading ? <p style={{ color: "var(--muted-foreground)", fontSize: "0.875rem" }}>Loading…</p> : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+          <h3 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 600, fontSize: "1rem" }}>Users with access</h3>
           {userIds.length === 0 && <p style={{ color: "var(--muted-foreground)", fontSize: "0.875rem" }}>No users yet.</p>}
           {userIds.map(uid => {
-            const perms = userPerms[uid] ?? [];
-            const isExpanded = expandedUser === uid;
+            const roles = userRoles[uid] ?? [];
             return (
-              <div key={uid} style={{ borderRadius: "0.875rem", border: `1px solid ${isExpanded ? "var(--primary)" : "var(--border)"}`, background: "var(--card)", overflow: "hidden" }}>
-                <div style={{ padding: "0.875rem 1.25rem", display: "flex", alignItems: "center", gap: "0.75rem", cursor: "pointer" }} onClick={() => setExpandedUser(isExpanded ? null : uid)}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: "0.7rem", fontFamily: "monospace", color: "var(--muted-foreground)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{uid}</div>
-                    <div style={{ fontSize: "0.8rem", marginTop: "0.2rem", fontWeight: 600, color: "var(--foreground)" }}>{perms.length} permission{perms.length !== 1 ? "s" : ""}</div>
-                  </div>
-                  <div style={{ display: "flex", gap: "0.375rem", flexShrink: 0 }}>
-                    <button onClick={e => { e.stopPropagation(); setExpandedUser(isExpanded ? null : uid); }}
-                      style={{ padding: "0.25rem 0.75rem", borderRadius: "0.375rem", border: "1px solid var(--border)", background: isExpanded ? "var(--primary)" : "none", color: isExpanded ? "white" : "var(--foreground)", cursor: "pointer", fontSize: "0.75rem", fontWeight: 600 }}>
-                      {isExpanded ? "Collapse" : "Edit"}
-                    </button>
-                    <button onClick={e => { e.stopPropagation(); removeUser(uid); }}
-                      style={{ padding: "0.25rem 0.625rem", borderRadius: "0.375rem", border: "1px solid var(--border)", background: "none", color: "var(--destructive)", cursor: "pointer", fontSize: "0.75rem" }}>
-                      Remove
-                    </button>
-                  </div>
+              <div key={uid} style={{ padding: "0.875rem 1.25rem", borderRadius: "0.75rem", border: "1px solid var(--border)", background: "var(--card)", display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: "0.7rem", fontFamily: "monospace", color: "var(--muted-foreground)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{uid}</div>
+                  <div style={{ fontSize: "0.8rem", fontWeight: 600, marginTop: "0.2rem", color: "var(--foreground)", textTransform: "capitalize" }}>{roles.join(", ") || "no roles"}</div>
                 </div>
-                {isExpanded && (
-                  <div style={{ padding: "0 1.25rem 1.25rem", borderTop: "1px solid var(--border)" }}>
-                    <div style={{ padding: "0.75rem 0", display: "flex", gap: "0.375rem", flexWrap: "wrap", alignItems: "center" }}>
-                      <span style={{ fontSize: "0.72rem", fontWeight: 600, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.08em", marginRight: "0.25rem" }}>Quick presets:</span>
-                      {Object.keys(PRESETS).map(p => (
-                        <button key={p} onClick={() => applyPreset(uid, p)}
-                          style={{ padding: "0.2rem 0.625rem", borderRadius: "9999px", border: "1px solid var(--border)", background: "none", cursor: "pointer", fontSize: "0.72rem", fontWeight: 600, fontFamily: "inherit" }}>
-                          {p}
-                        </button>
-                      ))}
-                    </div>
-                    {PERMISSION_GROUPS.map(g => (
-                      <div key={g.group} style={{ marginBottom: "1rem" }}>
-                        <div style={{ fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--primary)", marginBottom: "0.5rem" }}>{g.group}</div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                          {g.items.map(item => {
-                            const checked = perms.includes(item.key);
-                            return (
-                              <label key={item.key} style={{ display: "flex", alignItems: "center", gap: "0.625rem", cursor: "pointer", padding: "0.25rem 0.5rem", borderRadius: "0.375rem" }}>
-                                <input type="checkbox" checked={checked} onChange={() => toggle(uid, item.key)}
-                                  style={{ width: 16, height: 16, accentColor: "var(--primary)", cursor: "pointer", flexShrink: 0 }} />
-                                <span style={{ fontSize: "0.875rem", color: checked ? "var(--foreground)" : "var(--muted-foreground)" }}>{item.label}</span>
-                              </label>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <div style={{ display: "flex", gap: "0.375rem", flexShrink: 0, flexWrap: "wrap" }}>
+                  {ROLES_LIST.map(r => {
+                    const has = roles.includes(r.id);
+                    return (
+                      <button key={r.id} onClick={() => has ? revoke(uid, r.id) : grant(uid, r.id)}
+                        style={{ padding: "0.25rem 0.75rem", borderRadius: "9999px", fontSize: "0.75rem", fontWeight: 600, border: "none", cursor: "pointer", background: has ? "var(--primary)" : "var(--muted)", color: has ? "white" : "var(--muted-foreground)", transition: "all 0.15s" }}>
+                        {has ? "✓ " : ""}{r.label}
+                      </button>
+                    );
+                  })}
+                  <button onClick={() => removeUser(uid)}
+                    style={{ padding: "0.25rem 0.625rem", borderRadius: "9999px", fontSize: "0.75rem", fontWeight: 600, border: "1px solid var(--border)", background: "none", color: "var(--destructive)", cursor: "pointer" }}>
+                    Remove
+                  </button>
+                </div>
               </div>
             );
           })}

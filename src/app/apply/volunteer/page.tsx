@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { supabase } from "@/lib/supabase";
+import { TurnstileWidget, verifyTurnstile } from "@/components/TurnstileWidget";
 import { notifyAdmin } from "@/lib/notify";
 import { useAuth } from "@/context/auth";
 import { useRouter } from "next/navigation";
@@ -19,6 +20,7 @@ export default function VolunteerApplyPage() {
   const [selectedShifts, setSelectedShifts] = useState<Set<string>>(new Set());
   const [selectedInterests, setSelectedInterests] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
+  const [tsToken, setTsToken] = useState("");
   const [form, setForm] = useState({ full_name: "", contact_email: "", contact_phone: "", notes: "" });
 
   useEffect(() => {
@@ -41,6 +43,7 @@ export default function VolunteerApplyPage() {
     e.preventDefault();
     if (!user) return;
     setSubmitting(true);
+    if (tsToken) { const ok = await verifyTurnstile(tsToken); if (!ok) { toast.error("Security check failed. Please try again."); setSubmitting(false); return; } }
     const { error } = await supabase.from("volunteer_applications").insert({ ...form, user_id: user.id, interests: Array.from(selectedInterests), selected_shifts: Array.from(selectedShifts) });
     setSubmitting(false);
     if (error) { toast.error(error.message); return; }
@@ -92,6 +95,7 @@ export default function VolunteerApplyPage() {
           </div>
 
           <div><label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.375rem" }}>Anything else?</label><textarea rows={3} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} style={{ ...inp, resize: "vertical" }} /></div>
+          <TurnstileWidget onVerify={setTsToken} onError={() => setTsToken("")} />
           <button type="submit" disabled={submitting} style={{ width: "100%", padding: "0.875rem", borderRadius: "0.5rem", background: "var(--primary)", color: "white", border: "none", cursor: "pointer", fontSize: "1rem", fontWeight: 700, fontFamily: "Montserrat, sans-serif", opacity: submitting ? 0.7 : 1 }}>
             {submitting ? "Submitting…" : "Submit application"}
           </button>

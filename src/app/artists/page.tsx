@@ -3,6 +3,7 @@ import { useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Mic2, Users, Calendar } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { TurnstileWidget, verifyTurnstile } from "@/components/TurnstileWidget";
 import { notifyAdmin } from "@/lib/notify";
 import { useAuth } from "@/context/auth";
 import { useRouter } from "next/navigation";
@@ -20,6 +21,7 @@ export default function ArtistsPage() {
   const router = useRouter();
   const s = useSiteSettings();
   const [loading, setLoading] = useState(false);
+  const [tsToken, setTsToken] = useState("");
   const [form, setForm] = useState({ stage_name: "", bio: "", performance_type: "", equipment: "", social_links: "", media_link: "", contact_email: user?.email ?? "", contact_phone: "", set_length_minutes: 30, stage_preference: "main" });
 
   const submit = async (e: React.FormEvent) => {
@@ -27,6 +29,7 @@ export default function ArtistsPage() {
     if (!user) { toast.info("Please sign in to submit your application."); router.push("/login"); return; }
     if (!form.performance_type) { toast.error("Please choose a performance type."); return; }
     setLoading(true);
+    if (tsToken) { const ok = await verifyTurnstile(tsToken); if (!ok) { toast.error("Security check failed. Please try again."); setLoading(false); return; } }
     const portfolio_links = [form.media_link, ...form.social_links.split("\n")].map(s => s.trim()).filter(Boolean);
     const { error } = await supabase.from("artist_applications").insert({
       stage_name: form.stage_name,
@@ -96,6 +99,7 @@ export default function ArtistsPage() {
             <div><label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.375rem" }}>Contact phone</label><input value={form.contact_phone} onChange={e => setForm({ ...form, contact_phone: e.target.value })} style={inp} /></div>
           </div>
           {!user && <p style={{ fontSize: "0.875rem", color: "var(--muted-foreground)" }}>You'll need to <Link href="/login" style={{ color: "var(--primary)", textDecoration: "underline" }}>sign in</Link> or <Link href="/signup" style={{ color: "var(--primary)", textDecoration: "underline" }}>create an account</Link> to submit.</p>}
+          <TurnstileWidget onVerify={setTsToken} onError={() => setTsToken("")} />
           <button type="submit" disabled={loading} style={{ width: "100%", padding: "0.875rem", borderRadius: "0.5rem", background: "var(--primary)", color: "white", border: "none", cursor: "pointer", fontSize: "1rem", fontWeight: 700, fontFamily: "Montserrat, sans-serif", opacity: loading ? 0.7 : 1 }}>
             {loading ? "Submitting…" : "Submit application"}
           </button>

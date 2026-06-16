@@ -7,12 +7,15 @@ import { notifyAdmin } from "@/lib/notify";
 import { useSiteSettings } from "@/lib/site-content";
 import { toast } from "sonner";
 
+import { TurnstileWidget, verifyTurnstile } from "@/components/TurnstileWidget";
+
 const inp: React.CSSProperties = { width: "100%", padding: "0.5rem 0.875rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "var(--input)", fontSize: "0.9rem", fontFamily: "inherit", outline: "none" };
 
 export default function ContactPage() {
   const s = useSiteSettings();
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+  const [tsToken, setTsToken] = useState("");
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -22,6 +25,11 @@ export default function ContactPage() {
     const subject = String(fd.get("subject") ?? "") || null;
     const message = String(fd.get("message") ?? "");
     setBusy(true);
+    // Turnstile verification
+    if (tsToken) {
+      const ok = await verifyTurnstile(tsToken);
+      if (!ok) { toast.error("Security check failed. Please try again."); setBusy(false); return; }
+    }
     // Rate limit check
     const rl = await fetch("/api/contact", { method: "POST" });
     if (!rl.ok) { const j = await rl.json(); toast.error(j.error || "Too many submissions"); setBusy(false); return; }
@@ -53,6 +61,7 @@ export default function ContactPage() {
                 </div>
                 <div><label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.375rem" }}>Subject</label><input name="subject" maxLength={300} style={inp} /></div>
                 <div><label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.375rem" }}>Message</label><textarea name="message" rows={6} required minLength={5} maxLength={5000} style={{ ...inp, resize: "vertical" }} /></div>
+                <TurnstileWidget onVerify={setTsToken} onError={() => setTsToken("")} />
                 <button type="submit" disabled={busy} style={{ padding: "0.75rem 1.75rem", borderRadius: "0.5rem", background: "var(--primary)", color: "white", border: "none", cursor: "pointer", fontSize: "1rem", fontWeight: 600, fontFamily: "Montserrat, sans-serif", alignSelf: "flex-start", opacity: busy ? 0.7 : 1 }}>
                   {busy ? "Sending…" : "Send message"}
                 </button>

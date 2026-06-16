@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { TurnstileWidget, verifyTurnstile } from "@/components/TurnstileWidget";
 import { notifyAdmin } from "@/lib/notify";
 import { useAuth } from "@/context/auth";
 import { useRouter } from "next/navigation";
@@ -12,6 +13,7 @@ export default function VendorApplyPage() {
   const [spots, setSpots] = useState<{ id: string; code: string }[]>([]);
   const [files, setFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [tsToken, setTsToken] = useState("");
   const [done, setDone] = useState(false);
   const [form, setForm] = useState({ business_name: "", category: "food", description: "", contact_email: "", contact_phone: "", requested_spot_id: "" });
 
@@ -32,6 +34,7 @@ export default function VendorApplyPage() {
     e.preventDefault();
     if (!user) return;
     setSubmitting(true);
+    if (tsToken) { const ok = await verifyTurnstile(tsToken); if (!ok) { alert("Security check failed. Please try again."); setSubmitting(false); return; } }
     const document_urls: string[] = [];
     for (const f of files) {
       const path = `${user.id}/${Date.now()}-${f.name}`;
@@ -92,6 +95,7 @@ export default function VendorApplyPage() {
             <input type="file" multiple accept=".pdf,.jpg,.jpeg,.png" onChange={e => setFiles(Array.from(e.target.files ?? []))} style={inputStyle} />
             <p style={{ fontSize: "0.75rem", color: "var(--muted-foreground)", marginTop: "0.25rem" }}>PDF, JPG, or PNG. Multiple allowed.</p>
           </Field>
+          <TurnstileWidget onVerify={setTsToken} onError={() => setTsToken("")} />
           <button type="submit" disabled={submitting} style={{ padding: "0.875rem", borderRadius: "0.5rem", background: "var(--primary)", color: "white", border: "none", cursor: "pointer", fontSize: "1rem", fontWeight: 700, fontFamily: "Montserrat, sans-serif", opacity: submitting ? 0.7 : 1 }}>
             {submitting ? "Submitting…" : "Submit application"}
           </button>

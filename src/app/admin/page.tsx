@@ -3,11 +3,11 @@ import React, { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/context/auth";
 import { supabase } from "@/lib/supabase";
 import { refreshSiteSettings, DEFAULTS } from "@/lib/site-content";
-import { Save, Users, Store, Mic2, HandHeart, MessageSquare, Settings, Layout, AlignLeft, ShoppingBag, UserCircle, Globe, Star, ImageIcon, Calendar, MapPin } from "lucide-react";
+import { Save, Users, Store, Mic2, HandHeart, MessageSquare, Settings, Layout, AlignLeft, ShoppingBag, UserCircle, Globe, Star, ImageIcon, Calendar, MapPin, Award } from "lucide-react";
 import { MediaManager } from "./MediaManager";
 import { toast } from "sonner";
 
-type Tab = "settings" | "header" | "footer" | "about" | "entertainment" | "applications" | "home_extra" | "vendors_tab" | "artists_tab" | "volunteers_tab" | "messages" | "merch" | "team" | "sponsors_list" | "media" | "schedule" | "vendor_spots" | "users";
+type Tab = "settings" | "header" | "footer" | "about" | "entertainment" | "applications" | "home_extra" | "vendors_tab" | "artists_tab" | "volunteers_tab" | "messages" | "merch" | "team" | "sponsors_list" | "sponsor_tiers" | "media" | "schedule" | "vendor_spots" | "users";
 
 const inp: React.CSSProperties = { width: "100%", padding: "0.5rem 0.875rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "var(--input)", fontSize: "0.875rem", fontFamily: "inherit", outline: "none" };
 
@@ -122,6 +122,23 @@ const FIELDS: Record<Tab, { key: string; label: string; multiline?: boolean }[]>
     { key: "home_stat_4_value", label: "Stat 4 value" }, { key: "home_stat_4_label", label: "Stat 4 label" },
   ],
   vendors_tab: [], artists_tab: [], volunteers_tab: [], messages: [], merch: [], team: [], sponsors_list: [], media: [], schedule: [], vendor_spots: [], users: [],
+  sponsor_tiers: [
+    { key: "tier_section_subtitle", label: "Section subtitle", multiline: true },
+    { key: "tier_bronze_name", label: "Bronze — name" },
+    { key: "tier_bronze_price", label: "Bronze — price (e.g. $250)" },
+    { key: "tier_bronze_perks", label: "Bronze — perks (one per line)", multiline: true },
+    { key: "tier_silver_name", label: "Silver — name" },
+    { key: "tier_silver_price", label: "Silver — price" },
+    { key: "tier_silver_perks", label: "Silver — perks (one per line)", multiline: true },
+    { key: "tier_gold_name", label: "Gold — name" },
+    { key: "tier_gold_price", label: "Gold — price" },
+    { key: "tier_gold_perks", label: "Gold — perks (one per line)", multiline: true },
+    { key: "tier_platinum_name", label: "Platinum — name" },
+    { key: "tier_platinum_price", label: "Platinum — price" },
+    { key: "tier_platinum_perks", label: "Platinum — perks (one per line)", multiline: true },
+    { key: "tier_cta_title", label: "CTA banner — title" },
+    { key: "tier_cta_body", label: "CTA banner — body", multiline: true },
+  ],
 };
 
 function SettingsEditor({ tab }: { tab: Tab }) {
@@ -915,6 +932,7 @@ export default function AdminPage() {
     { id: "applications", label: "Artists & Volunteers", icon: HandHeart, group: "Site content", adminOnly: true },
     { id: "team", label: "Board", icon: UserCircle, group: "People", adminOnly: true },
     { id: "sponsors_list", label: "Sponsors", icon: Star, group: "People", adminOnly: true },
+    { id: "sponsor_tiers", label: "Sponsor Tiers", icon: Award, group: "People", adminOnly: true },
     { id: "merch", label: "Merch", icon: ShoppingBag, group: "Store", adminOnly: true },
     { id: "media", label: "Photos & Media", icon: ImageIcon, group: "Store", adminOnly: true },
     { id: "schedule", label: "Schedule", icon: Calendar, group: "Festival", adminOnly: true },
@@ -953,7 +971,7 @@ export default function AdminPage() {
 
         {/* Main content */}
         <main style={{ flex: 1, minWidth: 0 }}>
-          {(tab === "settings" || tab === "header" || tab === "footer" || tab === "about" || tab === "entertainment" || tab === "applications" || tab === "home_extra") && <SettingsEditor tab={tab} />}
+          {(tab === "settings" || tab === "header" || tab === "footer" || tab === "about" || tab === "entertainment" || tab === "applications" || tab === "sponsor_tiers" || tab === "home_extra") && <SettingsEditor tab={tab} />}
           {tab === "merch" && <MerchManager />}
           {tab === "media" && <MediaManager />}
           {tab === "schedule" && <ScheduleManager />}

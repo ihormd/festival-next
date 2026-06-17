@@ -142,3 +142,19 @@ export function useSiteSettings(): SiteSettings {
 }
 
 export async function refreshSiteSettings() { cache = null; await load(); }
+
+// Sponsor tier card fields
+const TIER_DEFAULTS: SiteSettings = {
+  tier_section_subtitle: "Choose your tier — or design a custom partnership with our team.",
+  tier_bronze_name: "Bronze", tier_bronze_price: "$250",
+  tier_bronze_perks: "Logo on website\nSocial media mention\nFestival program listing",
+  tier_silver_name: "Silver", tier_silver_price: "$1,000",
+  tier_silver_perks: "All Bronze perks\nStage shout-out\nReserved booth space\nLogo on signage",
+  tier_gold_name: "Gold", tier_gold_price: "$5,000",
+  tier_gold_perks: "All Silver perks\nPremium booth location\nHeadline stage banner\nVIP hospitality",
+  tier_platinum_name: "Platinum", tier_platinum_price: "$15,000",
+  tier_platinum_perks: "All Gold perks\nTitle sponsor naming\nDedicated press release\nYear-round partnership",
+  tier_cta_title: "Partner with NUFF 2026",
+  tier_cta_body: "Custom packages, in-kind contributions, and multi-year partnerships are all welcome.",
+};
+Object.assign(DEFAULTS, TIER_DEFAULTS);

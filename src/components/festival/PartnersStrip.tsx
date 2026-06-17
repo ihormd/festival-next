@@ -34,21 +34,22 @@ export function PartnersStrip() {
               {loop.map((sp, i) => {
                 const hasLogo = sp.logo_url && sp.logo_url.trim() !== "";
                 const inner = hasLogo ? (
-                  <div style={{ height: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem 2rem", borderRadius: "1rem", background: "white", boxShadow: "0 4px 24px rgba(0,0,0,0.08)", border: "1px solid var(--border)", transition: "all 0.3s", minWidth: 220 }}>
+                  <div style={{ height: 300, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "0.75rem", padding: "1.25rem 2rem", borderRadius: "1rem", background: "white", boxShadow: "0 4px 24px rgba(0,0,0,0.08)", border: "1px solid var(--border)", transition: "all 0.3s", minWidth: 260 }}>
                     <img
                       src={sp.logo_url!}
                       alt={sp.name}
-                      style={{ maxHeight: 150, maxWidth: 320, width: "auto", objectFit: "contain", transition: "all 0.3s" }}
+                      style={{ maxHeight: 225, maxWidth: 480, width: "auto", objectFit: "contain", transition: "all 0.3s" }}
                       onMouseEnter={e => { (e.currentTarget.parentElement as any).style.boxShadow = "0 8px 40px rgba(0,87,183,0.2)"; (e.currentTarget.parentElement as any).style.transform = "scale(1.06)"; (e.currentTarget.parentElement as any).style.borderColor = "var(--primary)"; }}
                       onMouseLeave={e => { (e.currentTarget.parentElement as any).style.boxShadow = "0 4px 24px rgba(0,0,0,0.08)"; (e.currentTarget.parentElement as any).style.transform = "scale(1)"; (e.currentTarget.parentElement as any).style.borderColor = "var(--border)"; }}
                       onError={e => {
                         const parent = e.currentTarget.parentElement;
-                        if (parent) parent.innerHTML = `<div style="font-size:0.875rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted-foreground);padding:0 1rem;text-align:center">${sp.name}</div>`;
+                        if (parent) parent.innerHTML = `<div style="font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted-foreground);padding:0 1rem;text-align:center">${sp.name}</div>`;
                       }}
                     />
+                    <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--muted-foreground)", textAlign: "center", letterSpacing: "0.05em", textTransform: "uppercase" }}>{sp.name}</span>
                   </div>
                 ) : (
-                  <div style={{ height: 200, minWidth: 220, borderRadius: "1rem", background: "white", border: "1px solid var(--border)", display: "grid", placeItems: "center", padding: "0 2rem", fontSize: "1rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--muted-foreground)", textAlign: "center", boxShadow: "0 4px 24px rgba(0,0,0,0.08)" }}>
+                  <div style={{ height: 300, minWidth: 260, borderRadius: "1rem", background: "white", border: "1px solid var(--border)", display: "grid", placeItems: "center", padding: "0 2rem", fontSize: "1rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--muted-foreground)", textAlign: "center", boxShadow: "0 4px 24px rgba(0,0,0,0.08)" }}>
                     {sp.name}
                   </div>
                 );

@@ -30,29 +30,25 @@ export function PartnersStrip() {
           <p style={{ fontSize: "0.875rem", color: "var(--muted-foreground)" }}>Partner roster coming soon.</p>
         ) : (
           <div className="marquee-mask" style={{ overflow: "hidden" }}>
-            <div className="animate-marquee" style={{ display: "flex", width: "max-content", alignItems: "center", gap: "5rem" }}>
+            <div className="animate-marquee" style={{ display: "flex", width: "max-content", alignItems: "center", gap: "6rem" }}>
               {loop.map((sp, i) => {
                 const hasLogo = sp.logo_url && sp.logo_url.trim() !== "";
                 const inner = hasLogo ? (
-                  <div style={{ height: 120, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ height: 160, display: "flex", alignItems: "center", justifyContent: "center", padding: "0.75rem 1.5rem", borderRadius: "1rem", background: "white", boxShadow: "0 4px 24px rgba(0,0,0,0.08)", border: "1px solid var(--border)", transition: "all 0.3s", minWidth: 180 }}>
                     <img
                       src={sp.logo_url!}
                       alt={sp.name}
-                      style={{ maxHeight: 120, maxWidth: 240, width: "auto", objectFit: "contain", filter: "grayscale(0.3)", opacity: 0.85, transition: "all 0.3s" }}
-                      onMouseEnter={e => { (e.currentTarget as any).style.filter = "grayscale(0)"; (e.currentTarget as any).style.opacity = "1"; (e.currentTarget as any).style.transform = "scale(1.05)"; }}
-                      onMouseLeave={e => { (e.currentTarget as any).style.filter = "grayscale(0.3)"; (e.currentTarget as any).style.opacity = "0.85"; (e.currentTarget as any).style.transform = "scale(1)"; }}
+                      style={{ maxHeight: 120, maxWidth: 260, width: "auto", objectFit: "contain", filter: "none", opacity: 1, transition: "all 0.3s", imageRendering: "high-quality" }}
+                      onMouseEnter={e => { (e.currentTarget.parentElement as any).style.boxShadow = "0 8px 40px rgba(0,87,183,0.2)"; (e.currentTarget.parentElement as any).style.transform = "scale(1.06)"; (e.currentTarget.parentElement as any).style.borderColor = "var(--primary)"; }}
+                      onMouseLeave={e => { (e.currentTarget.parentElement as any).style.boxShadow = "0 4px 24px rgba(0,0,0,0.08)"; (e.currentTarget.parentElement as any).style.transform = "scale(1)"; (e.currentTarget.parentElement as any).style.borderColor = "var(--border)"; }}
                       onError={e => {
-                        const el = e.currentTarget;
-                        el.style.display = "none";
-                        const div = document.createElement("div");
-                        div.style.cssText = "height:120px;min-width:200px;border-radius:0.5rem;background:white;border:1px dashed #ddd;display:grid;place-items:center;padding:0 1.5rem;font-size:0.875rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#888;text-align:center";
-                        div.textContent = sp.name;
-                        el.parentElement?.appendChild(div);
+                        const parent = e.currentTarget.parentElement;
+                        if (parent) parent.innerHTML = `<div style="font-size:0.875rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted-foreground);padding:0 1rem;text-align:center">${sp.name}</div>`;
                       }}
                     />
                   </div>
                 ) : (
-                  <div style={{ height: 120, minWidth: 200, borderRadius: "0.5rem", background: "white", border: "1px dashed var(--border)", display: "grid", placeItems: "center", padding: "0 1.5rem", fontSize: "0.875rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted-foreground)", textAlign: "center" }}>
+                  <div style={{ height: 160, minWidth: 200, borderRadius: "1rem", background: "white", border: "1px solid var(--border)", display: "grid", placeItems: "center", padding: "0 2rem", fontSize: "1rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--muted-foreground)", textAlign: "center", boxShadow: "0 4px 24px rgba(0,0,0,0.08)" }}>
                     {sp.name}
                   </div>
                 );

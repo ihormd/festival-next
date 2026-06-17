@@ -38,7 +38,7 @@ export function PartnersStrip() {
                     <img
                       src={sp.logo_url!}
                       alt={sp.name}
-                      style={{ maxHeight: 120, maxWidth: 260, width: "auto", objectFit: "contain", filter: "none", opacity: 1, transition: "all 0.3s", imageRendering: "high-quality" }}
+                      style={{ maxHeight: 120, maxWidth: 260, width: "auto", objectFit: "contain", transition: "all 0.3s" }}
                       onMouseEnter={e => { (e.currentTarget.parentElement as any).style.boxShadow = "0 8px 40px rgba(0,87,183,0.2)"; (e.currentTarget.parentElement as any).style.transform = "scale(1.06)"; (e.currentTarget.parentElement as any).style.borderColor = "var(--primary)"; }}
                       onMouseLeave={e => { (e.currentTarget.parentElement as any).style.boxShadow = "0 4px 24px rgba(0,0,0,0.08)"; (e.currentTarget.parentElement as any).style.transform = "scale(1)"; (e.currentTarget.parentElement as any).style.borderColor = "var(--border)"; }}
                       onError={e => {

@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { TurnstileWidget, verifyTurnstile } from "@/components/TurnstileWidget";
+import { Honeypot } from "@/components/Honeypot";
 import { notifyAdmin } from "@/lib/notify";
 import { useAuth } from "@/context/auth";
 import { useRouter } from "next/navigation";
@@ -14,6 +15,7 @@ export default function VendorApplyPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [tsToken, setTsToken] = useState("");
+  const [hp, setHp] = useState("");
   const [done, setDone] = useState(false);
   const [form, setForm] = useState({ business_name: "", category: "food", description: "", contact_email: "", contact_phone: "", requested_spot_id: "" });
 
@@ -34,6 +36,7 @@ export default function VendorApplyPage() {
     e.preventDefault();
     if (!user) return;
     setSubmitting(true);
+    if (hp) { setDone(true); setSubmitting(false); return; }
     if (tsToken) { const ok = await verifyTurnstile(tsToken); if (!ok) { alert("Security check failed. Please try again."); setSubmitting(false); return; } }
     const document_urls: string[] = [];
     for (const f of files) {
@@ -69,6 +72,7 @@ export default function VendorApplyPage() {
       </section>
       <section className="container-page" style={{ paddingTop: "3rem", paddingBottom: "4rem", maxWidth: "672px" }}>
         <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+          <Honeypot value={hp} onChange={setHp} />
           <Field label="Business name"><input required value={form.business_name} onChange={e => setForm({ ...form, business_name: e.target.value })} /></Field>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
             <Field label="Category">

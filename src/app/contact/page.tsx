@@ -8,6 +8,7 @@ import { useSiteSettings } from "@/lib/site-content";
 import { toast } from "sonner";
 
 import { TurnstileWidget, verifyTurnstile } from "@/components/TurnstileWidget";
+import { Honeypot } from "@/components/Honeypot";
 
 const inp: React.CSSProperties = { width: "100%", padding: "0.5rem 0.875rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "var(--input)", fontSize: "0.9rem", fontFamily: "inherit", outline: "none" };
 
@@ -16,6 +17,7 @@ export default function ContactPage() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [tsToken, setTsToken] = useState("");
+  const [hp, setHp] = useState("");
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -25,6 +27,8 @@ export default function ContactPage() {
     const subject = String(fd.get("subject") ?? "") || null;
     const message = String(fd.get("message") ?? "");
     setBusy(true);
+    // Honeypot: bots fill hidden field, humans don't
+    if (hp) { setDone(true); setBusy(false); return; } // silently pretend success
     // Turnstile verification
     if (tsToken) {
       const ok = await verifyTurnstile(tsToken);
@@ -55,6 +59,7 @@ export default function ContactPage() {
               </div>
             ) : (
               <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem", maxWidth: "36rem" }}>
+                <Honeypot value={hp} onChange={setHp} />
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
                   <div><label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.375rem" }}>Name</label><input name="name" required maxLength={200} style={inp} /></div>
                   <div><label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.375rem" }}>Email</label><input name="email" type="email" required style={inp} /></div>

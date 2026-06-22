@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Mic2, Users, Calendar } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { TurnstileWidget, verifyTurnstile } from "@/components/TurnstileWidget";
+import { Honeypot } from "@/components/Honeypot";
 import { notifyAdmin } from "@/lib/notify";
 import { useAuth } from "@/context/auth";
 import { useRouter } from "next/navigation";
@@ -22,6 +23,7 @@ export default function ArtistsPage() {
   const s = useSiteSettings();
   const [loading, setLoading] = useState(false);
   const [tsToken, setTsToken] = useState("");
+  const [hp, setHp] = useState("");
   const [form, setForm] = useState({ stage_name: "", bio: "", performance_type: "", equipment: "", social_links: "", media_link: "", contact_email: user?.email ?? "", contact_phone: "", set_length_minutes: 30, stage_preference: "main" });
 
   const submit = async (e: React.FormEvent) => {
@@ -29,6 +31,7 @@ export default function ArtistsPage() {
     if (!user) { toast.info("Please sign in to submit your application."); router.push("/login"); return; }
     if (!form.performance_type) { toast.error("Please choose a performance type."); return; }
     setLoading(true);
+    if (hp) { router.push("/dashboard"); setLoading(false); return; }
     if (tsToken) { const ok = await verifyTurnstile(tsToken); if (!ok) { toast.error("Security check failed. Please try again."); setLoading(false); return; } }
     const portfolio_links = [form.media_link, ...form.social_links.split("\n")].map(s => s.trim()).filter(Boolean);
     const { error } = await supabase.from("artist_applications").insert({
@@ -68,6 +71,7 @@ export default function ArtistsPage() {
       <section className="container-page" style={{ paddingBottom: "4rem", maxWidth: "768px" }}>
         <h2 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "1.5rem", fontWeight: 600, marginBottom: "1.5rem" }}>Artist application</h2>
         <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: "1.5rem", borderRadius: "1rem", border: "1px solid var(--border)", background: "var(--card)", padding: "1.5rem 2rem", boxShadow: "var(--shadow-soft)" }}>
+          <Honeypot value={hp} onChange={setHp} />
           <style>{`@media (min-width: 640px) { .artist-2col { grid-template-columns: 1fr 1fr !important; } }`}</style>
           <div className="artist-2col" style={{ display: "grid", gap: "1rem" }}>
             <div><label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.375rem" }}>Stage / artist name</label><input required value={form.stage_name} onChange={e => setForm({ ...form, stage_name: e.target.value })} style={inp} /></div>

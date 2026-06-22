@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { supabase } from "@/lib/supabase";
 import { notifyAdmin } from "@/lib/notify";
+import { Honeypot } from "@/components/Honeypot";
 import { toast } from "sonner";
 import Link from "next/link";
 
@@ -14,11 +15,13 @@ function SponsorApplyForm() {
   const params = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [hp, setHp] = useState("");
   const [form, setForm] = useState({ company_name: "", contact_name: "", email: "", tier: params.get("tier") || "gold", message: "" });
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    if (hp) { setDone(true); setLoading(false); return; }
     const { error } = await supabase.from("sponsorship_inquiries").insert({ ...form, festival_year: 2026, status: "pending" });
     setLoading(false);
     if (error) { toast.error(error.message); return; }
@@ -41,6 +44,7 @@ function SponsorApplyForm() {
       <PageHeader eyebrow="Sponsor Application" title="Become a partner." subtitle="Fill in your details and we'll get back to you within 2 business days." />
       <section className="container-page" style={{ paddingTop: "3rem", paddingBottom: "4rem", maxWidth: "560px" }}>
         <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: "1.25rem", borderRadius: "1rem", border: "1px solid var(--border)", background: "var(--card)", padding: "1.5rem 2rem", boxShadow: "var(--shadow-soft)" }}>
+          <Honeypot value={hp} onChange={setHp} />
           {[{ key: "company_name", label: "Company name *" }, { key: "contact_name", label: "Contact name *" }, { key: "email", label: "Email *" }].map(f => (
             <div key={f.key}>
               <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.375rem" }}>{f.label}</label>

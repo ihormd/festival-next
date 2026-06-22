@@ -3,6 +3,7 @@ import { useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { supabase } from "@/lib/supabase";
 import { TurnstileWidget, verifyTurnstile } from "@/components/TurnstileWidget";
+import { Honeypot } from "@/components/Honeypot";
 import { notifyAdmin } from "@/lib/notify";
 import { useAuth } from "@/context/auth";
 import { useRouter } from "next/navigation";
@@ -21,6 +22,7 @@ export default function VolunteersPage() {
   const s = useSiteSettings();
   const [loading, setLoading] = useState(false);
   const [tsToken, setTsToken] = useState("");
+  const [hp, setHp] = useState("");
   const [roles, setRoles] = useState<Set<string>>(new Set());
   const [days, setDays] = useState<Set<string>>(new Set());
   const [form, setForm] = useState({ full_name: user?.user_metadata?.full_name ?? "", contact_email: user?.email ?? "", contact_phone: "", notes: "" });
@@ -35,6 +37,7 @@ export default function VolunteersPage() {
     if (roles.size === 0) { toast.error("Pick at least one role."); return; }
     if (days.size === 0) { toast.error("Pick at least one day."); return; }
     setLoading(true);
+    if (hp) { router.push("/dashboard"); setLoading(false); return; }
     if (tsToken) { const ok = await verifyTurnstile(tsToken); if (!ok) { toast.error("Security check failed. Please try again."); setLoading(false); return; } }
     const { error } = await supabase.from("volunteer_applications").insert({
       ...form, user_id: user.id,
@@ -53,6 +56,7 @@ export default function VolunteersPage() {
       <PageHeader eyebrow={s.volunteers_eyebrow || "Crew up"} title={s.volunteers_title || "Volunteer with NUFF"} subtitle={s.volunteers_subtitle || "Help us run the most welcoming festival in the region. Pick your roles, pick your days."} />
       <section className="container-page" style={{ paddingTop: "3rem", paddingBottom: "4rem", maxWidth: "768px" }}>
         <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: "2rem", borderRadius: "1rem", border: "1px solid var(--border)", background: "var(--card)", padding: "1.5rem 2rem", boxShadow: "var(--shadow-soft)" }}>
+          <Honeypot value={hp} onChange={setHp} />
           <style>{`@media (min-width: 640px) { .vol-2col { grid-template-columns: 1fr 1fr !important; } }`}</style>
           <div className="vol-2col" style={{ display: "grid", gap: "1rem" }}>
             <div><label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.375rem" }}>Full name</label><input required value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} style={inp} /></div>

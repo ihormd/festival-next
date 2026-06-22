@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { supabase } from "@/lib/supabase";
 import { TurnstileWidget, verifyTurnstile } from "@/components/TurnstileWidget";
+import { Honeypot } from "@/components/Honeypot";
 import { notifyAdmin } from "@/lib/notify";
 import { useAuth } from "@/context/auth";
 import { useRouter } from "next/navigation";
@@ -18,6 +19,7 @@ export default function ArtistApplyPage() {
   const [rider, setRider] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [tsToken, setTsToken] = useState("");
+  const [hp, setHp] = useState("");
   const [form, setForm] = useState({ stage_name: "", bio: "", portfolio_links: "", contact_email: "", contact_phone: "", set_length_minutes: 30, stage_preference: "either" });
 
   useEffect(() => { if (user) setForm(f => ({ ...f, contact_email: user.email ?? "" })); }, [user]);
@@ -34,6 +36,7 @@ export default function ArtistApplyPage() {
     e.preventDefault();
     if (!user) return;
     setSubmitting(true);
+    if (hp) { router.push("/dashboard"); setSubmitting(false); return; }
     if (tsToken) { const ok = await verifyTurnstile(tsToken); if (!ok) { toast.error("Security check failed. Please try again."); setSubmitting(false); return; } }
     let tech_rider_url: string | null = null;
     if (rider) {
@@ -61,6 +64,7 @@ export default function ArtistApplyPage() {
       <PageHeader eyebrow="Artist" title="Apply to perform" subtitle="Share your work, set length, and tech requirements." />
       <section className="container-page" style={{ paddingTop: "3rem", paddingBottom: "4rem", maxWidth: "672px" }}>
         <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+          <Honeypot value={hp} onChange={setHp} />
           <div><label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.375rem" }}>Stage name</label><input required value={form.stage_name} onChange={e => setForm({ ...form, stage_name: e.target.value })} style={inp} /></div>
           <div><label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.375rem" }}>Short bio</label><textarea rows={4} value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} style={{ ...inp, resize: "vertical" }} /></div>
           <div><label style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.375rem" }}>Portfolio links (one per line)</label><textarea rows={3} placeholder="https://youtube.com/..." value={form.portfolio_links} onChange={e => setForm({ ...form, portfolio_links: e.target.value })} style={{ ...inp, resize: "vertical" }} /></div>

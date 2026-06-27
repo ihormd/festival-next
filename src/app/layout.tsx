@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/context/auth";
 import { Header } from "@/components/layout/Header";
@@ -10,11 +10,38 @@ import { CookieConsent } from "@/components/CookieConsent";
 export const metadata: Metadata = {
   title: "NUFF — Niagara Ukrainian Family Festival",
   description: "A celebration of Ukrainian heritage in the heart of Niagara. July 11–12, 2026.",
+  metadataBase: new URL("https://festua.ca"),
+  openGraph: {
+    title: "NUFF — Niagara Ukrainian Family Festival",
+    description: "Two days of music, dance, food, craft, and community at Fireman's Park. July 11–12, 2026.",
+    url: "https://festua.ca",
+    siteName: "NUFF — Niagara Ukrainian Family Festival",
+    locale: "en_CA",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "NUFF — Niagara Ukrainian Family Festival",
+    description: "Two days of music, dance, food, craft, and community. July 11–12, 2026.",
+  },
+  robots: { index: true, follow: true },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#0057B7",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://rpggfbwmyahmttfcwqle.supabase.co" />
+        <link rel="icon" href="/assets/nuff-logo.png" type="image/png" />
+      </head>
       <body>
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-LCMTZXVL2Y" strategy="afterInteractive" />
         <Script id="ga-init" strategy="afterInteractive">

@@ -951,9 +951,16 @@ export default function AdminPage() {
   return (
     <div className="container-page" style={{ paddingTop: "3rem", paddingBottom: "5rem" }}>
       <h1 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "1.75rem", fontWeight: 800, marginBottom: "2rem" }}>Admin Panel</h1>
-      <div style={{ display: "flex", gap: "2rem", alignItems: "flex-start" }}>
+      <style>{`
+        @media (max-width: 768px) {
+          .admin-layout { flex-direction: column !important; }
+          .admin-sidebar { width: 100% !important; flex-direction: row !important; flex-wrap: wrap !important; gap: 0.25rem !important; border-bottom: 1px solid var(--border); padding-bottom: 1rem; margin-bottom: 1rem; }
+          .admin-sidebar > div { margin-bottom: 0 !important; }
+        }
+      `}</style>
+      <div className="admin-layout" style={{ display: "flex", gap: "2rem", alignItems: "flex-start" }}>
         {/* Sidebar nav */}
-        <aside style={{ width: 200, flexShrink: 0, display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+        <aside className="admin-sidebar" style={{ width: 200, flexShrink: 0, display: "flex", flexDirection: "column", gap: "1.5rem" }}>
           {groups.map(g => (
             <div key={g}>
               <div style={{ fontSize: "0.65rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--muted-foreground)", marginBottom: "0.5rem" }}>{g}</div>

@@ -147,7 +147,7 @@ export default function FestivalPage() {
         <div style={{ columns: "2 200px", gap: "1rem" }}>
           {memories.map((src, i) => (
             <div key={i} style={{ marginBottom: "1rem", breakInside: "avoid", borderRadius: "1rem", overflow: "hidden", border: "1px solid var(--border)", boxShadow: "var(--shadow-soft)" }}>
-              <img src={src} alt={`NUFF memory ${i + 1}`} loading="lazy" style={{ width: "100%", height: "auto", display: "block", transition: "transform 0.5s" }}
+              <img src={src} alt={`NUFF memory ${i + 1}`} loading="lazy" decoding="async" style={{ width: "100%", height: "auto", display: "block", transition: "transform 0.5s" }}
                 onMouseEnter={e => (e.currentTarget as any).style.transform = "scale(1.02)"}
                 onMouseLeave={e => (e.currentTarget as any).style.transform = "scale(1)"} />
             </div>

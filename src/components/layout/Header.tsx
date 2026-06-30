@@ -41,7 +41,7 @@ export function Header() {
     <header style={{ position: "sticky", top: 0, zIndex: 40, borderBottom: scrolled ? "1px solid var(--border)" : "1px solid transparent", background: scrolled ? "rgba(255,253,245,0.88)" : "rgba(255,253,245,0.6)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", transition: "background 0.3s, border-color 0.3s, box-shadow 0.3s", boxShadow: scrolled ? "0 2px 20px rgba(0,0,0,0.06)" : "none" }}>
       <div className="container-page" style={{ display: "flex", height: 80, alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
         <Link href="/" style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
-          <img src={s.logo_url || "/assets/nuff-logo.png"} alt={s.header_logo_alt || "NUFF"} style={{ height: 56, width: "auto" }} />
+          <img src={s.logo_url || "/assets/nuff-logo.png"} alt={s.header_logo_alt || "NUFF"} loading="eager" decoding="async" style={{ height: 56, width: "auto" }} />
         </Link>
 
         <nav style={{ display: "flex", alignItems: "center", gap: "1.75rem" }} className="hidden-mobile">

@@ -55,7 +55,7 @@ export default function Home() {
       {/* Hero */}
       <section style={{ position: "relative", overflow: "hidden", minHeight: "calc(100vh - 80px)" }}>
         <div style={{ position: "absolute", inset: 0 }}>
-          <img src={s.hero_image_url || "/assets/hero-festival.jpg"} alt="NUFF Festival" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img src={s.hero_image_url || "/assets/hero-festival.jpg"} alt="NUFF Festival" loading="eager" decoding="async" fetchPriority="high" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,0.52) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.62) 100%)" }} />
         </div>
         <div className="container-page" style={{ position: "relative", paddingTop: "8rem", paddingBottom: "8rem", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", color: "white" }}>
@@ -111,7 +111,7 @@ export default function Home() {
           {pillars.map((p) => (
             <div key={p.title} className="pillar-card" style={{ borderRadius: "1rem", overflow: "hidden", border: "1px solid var(--border)", background: "var(--card)", boxShadow: "var(--shadow-soft)" }}>
               <div style={{ aspectRatio: "1/1", overflow: "hidden", background: "var(--muted)" }}>
-                <img src={p.img} alt={p.title} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <img src={p.img} alt={p.title} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               </div>
               <div style={{ padding: "1.25rem" }}>
                 <h3 style={{ fontFamily: "Montserrat, sans-serif", fontSize: "1.2rem", fontWeight: 700, color: "var(--primary)" }}>{p.title}</h3>

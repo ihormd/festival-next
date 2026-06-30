@@ -53,6 +53,16 @@ export default function VendorsPage() {
     if (!selected || !user) return;
     setBusy(true);
     try {
+      // Double-booking protection: re-check spot status before booking
+      const { data: freshSpot } = await supabase
+        .from("vendor_spots").select("status").eq("id", selected.id).single();
+      if (!freshSpot || freshSpot.status !== "available") {
+        alert("Sorry, this spot was just taken by someone else. Please choose another.");
+        const { data: fresh } = await supabase.from("vendor_spots").select("*").order("code");
+        setSpots((fresh as Spot[]) ?? []);
+        setSelected(null); setStep("choose");
+        setBusy(false); return;
+      }
       const { data, error } = await supabase.rpc("book_vendor_spot", {
         p_spot_id: selected.id, p_payment_method: method,
         p_business_name: form.business_name, p_contact_name: form.contact_name,

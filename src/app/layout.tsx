@@ -41,6 +41,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://rpggfbwmyahmttfcwqle.supabase.co" />
         <link rel="icon" href="/assets/nuff-logo.png" type="image/png" />
+        <link rel="preload" href="/assets/hero-festival.jpg" as="image" fetchPriority="high" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,500;1,600;1,700&family=Inter:wght@400;500;600;700&display=swap"
+        />
       </head>
       <body>
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-LCMTZXVL2Y" strategy="afterInteractive" />

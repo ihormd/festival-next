@@ -17,8 +17,8 @@ export default function Home() {
     }
     const t = setTimeout(() => {
       setSplashExit(true);
-      setTimeout(() => { setSplashDone(true); if (typeof window !== "undefined") sessionStorage.setItem("nuff_splash", "1"); }, 700);
-    }, 2500);
+      setTimeout(() => { setSplashDone(true); if (typeof window !== "undefined") sessionStorage.setItem("nuff_splash", "1"); }, 400);
+    }, 900);
     return () => clearTimeout(t);
   }, []);
 
@@ -48,14 +48,14 @@ export default function Home() {
       {/* Splash */}
       {!splashDone && (
         <div ref={splashRef} className={splashExit ? "splash-exit" : ""} style={{ position: "fixed", inset: 0, zIndex: 60, display: "grid", placeItems: "center", background: "var(--background)" }}>
-          <img src="/assets/nuff-logo.png" alt="NUFF" className="splash-logo" style={{ width: "min(22rem, 75vw)", height: "auto", filter: "drop-shadow(0 20px 40px rgba(0,87,183,0.2))" }} />
+          <img src="/assets/nuff-logo.png" alt="NUFF" className="splash-logo" loading="eager" decoding="async" fetchPriority="high" width={352} height={352} style={{ width: "min(22rem, 75vw)", height: "auto", filter: "drop-shadow(0 20px 40px rgba(0,87,183,0.2))" }} />
         </div>
       )}
 
       {/* Hero */}
       <section style={{ position: "relative", overflow: "hidden", minHeight: "calc(100vh - 80px)" }}>
         <div style={{ position: "absolute", inset: 0 }}>
-          <img src={s.hero_image_url || "/assets/hero-festival.jpg"} alt="NUFF Festival" loading="eager" decoding="async" fetchPriority="high" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img src={s.hero_image_url || "/assets/hero-festival.jpg"} alt="NUFF Festival" loading="eager" decoding="async" fetchPriority="high" width={1600} height={900} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,0.52) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.62) 100%)" }} />
         </div>
         <div className="container-page" style={{ position: "relative", paddingTop: "8rem", paddingBottom: "8rem", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", color: "white" }}>

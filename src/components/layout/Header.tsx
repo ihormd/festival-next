@@ -88,7 +88,7 @@ export function Header() {
           )}
         </div>
 
-        <button onClick={() => setOpen(!open)} style={{ padding: "0.5rem", background: "none", border: "none", cursor: "pointer" }} className="show-mobile">
+        <button onClick={() => setOpen(!open)} aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} style={{ padding: "0.5rem", background: "none", border: "none", cursor: "pointer" }} className="show-mobile">
           {open ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>

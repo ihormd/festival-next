@@ -170,7 +170,7 @@ export default function VendorsPage() {
           <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }} onClick={() => setSelected(null)}>
             <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)" }} />
             <div style={{ position: "relative", background: "var(--card)", borderRadius: "1rem", padding: "1.5rem", width: "100%", maxWidth: 480, boxShadow: "0 24px 64px rgba(0,0,0,0.2)" }} onClick={e => e.stopPropagation()}>
-              <button onClick={() => setSelected(null)} style={{ position: "absolute", top: "1rem", right: "1rem", background: "none", border: "none", cursor: "pointer", fontSize: "1.25rem", color: "var(--muted-foreground)" }}>✕</button>
+              <button onClick={() => setSelected(null)} aria-label="Close" style={{ position: "absolute", top: "1rem", right: "1rem", background: "none", border: "none", cursor: "pointer", fontSize: "1.25rem", color: "var(--muted-foreground)" }}>✕</button>
 
               {step === "choose" && (
                 <>

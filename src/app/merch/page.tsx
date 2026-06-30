@@ -72,7 +72,7 @@ export default function MerchPage() {
           <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: "min(400px, 100vw)", background: "var(--card)", display: "flex", flexDirection: "column", boxShadow: "-4px 0 24px rgba(0,0,0,0.15)" }}>
             <div style={{ padding: "1.25rem 1.5rem", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <h2 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "1.1rem" }}>Your cart</h2>
-              <button onClick={() => setCartOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", padding: "0.25rem" }}><X size={20} /></button>
+              <button onClick={() => setCartOpen(false)} aria-label="Close cart" style={{ background: "none", border: "none", cursor: "pointer", padding: "0.25rem" }}><X size={20} /></button>
             </div>
             <div style={{ flex: 1, overflowY: "auto", padding: "1rem 1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
               {items.length === 0 && <p style={{ fontSize: "0.875rem", color: "var(--muted-foreground)" }}>Cart is empty.</p>}
@@ -84,10 +84,10 @@ export default function MerchPage() {
                     <div style={{ fontSize: "0.75rem", color: "var(--muted-foreground)" }}>${(i.price_cents / 100).toFixed(2)}</div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                    <button onClick={() => cart.setQty(i.id, i.qty - 1)} style={{ padding: "0.25rem", borderRadius: "0.25rem", background: "var(--muted)", border: "none", cursor: "pointer", display: "grid", placeItems: "center" }}><Minus size={14} /></button>
+                    <button onClick={() => cart.setQty(i.id, i.qty - 1)} aria-label={`Decrease quantity of ${i.name}`} style={{ padding: "0.25rem", borderRadius: "0.25rem", background: "var(--muted)", border: "none", cursor: "pointer", display: "grid", placeItems: "center" }}><Minus size={14} /></button>
                     <span style={{ width: 24, textAlign: "center", fontSize: "0.875rem" }}>{i.qty}</span>
-                    <button onClick={() => cart.setQty(i.id, i.qty + 1)} style={{ padding: "0.25rem", borderRadius: "0.25rem", background: "var(--muted)", border: "none", cursor: "pointer", display: "grid", placeItems: "center" }}><Plus size={14} /></button>
-                    <button onClick={() => cart.remove(i.id)} style={{ padding: "0.25rem", borderRadius: "0.25rem", background: "none", border: "none", cursor: "pointer", color: "#ef4444", marginLeft: "0.25rem", display: "grid", placeItems: "center" }}><Trash2 size={14} /></button>
+                    <button onClick={() => cart.setQty(i.id, i.qty + 1)} aria-label={`Increase quantity of ${i.name}`} style={{ padding: "0.25rem", borderRadius: "0.25rem", background: "var(--muted)", border: "none", cursor: "pointer", display: "grid", placeItems: "center" }}><Plus size={14} /></button>
+                    <button onClick={() => cart.remove(i.id)} aria-label={`Remove ${i.name} from cart`} style={{ padding: "0.25rem", borderRadius: "0.25rem", background: "none", border: "none", cursor: "pointer", color: "#ef4444", marginLeft: "0.25rem", display: "grid", placeItems: "center" }}><Trash2 size={14} /></button>
                   </div>
                 </div>
               ))}
